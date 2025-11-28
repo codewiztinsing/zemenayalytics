@@ -37,6 +37,19 @@ services:
       - migrate
     restart: "no"
 
+  test:
+    build:
+      context: .
+    command: bash scripts/run_tests.sh
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - migrate
+    restart: "no"
+
   web:
     build:
       context: .
