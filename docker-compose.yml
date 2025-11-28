@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:15
+    env_file:
+      - .env
+  
+    ports:
+      - "5433:5432"
+
+  redis:
+    image: redis:7
+
+  migrate:
+    build:
+      context: .
+    command: bash scripts/migrate_and_create_superuser.sh
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    restart: "no"
+
+  web:
+    build:
+      context: .
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+      - migrate
