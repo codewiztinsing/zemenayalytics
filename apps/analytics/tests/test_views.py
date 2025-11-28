@@ -98,6 +98,22 @@ class BlogViewsAnalyticsViewTest(TestCase):
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_blog_views_analytics_invalid_filter_format(self):
+        """Test blog views analytics endpoint with invalid filter format."""
+        url = "/api/v1/analytics/blog-views/"
+        # Test with Swagger's additionalProp pattern (invalid)
+        data = {
+            "object_type": "country",
+            "filters": {
+                "additionalProp1": "string",
+                "additionalProp2": "string"
+            }
+        }
+        response = self.client.post(url, data, format="json")
+        
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("filter", response.data.get("filters", [""])[0].lower() if isinstance(response.data.get("filters"), list) else str(response.data).lower())
+
     def test_blog_views_analytics_empty_result(self):
         """Test blog views analytics with no data."""
         # Delete all views

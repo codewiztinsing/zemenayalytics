@@ -51,13 +51,19 @@ class TopAnalyticsView(APIView):
         end = validated_data.get("end")
 
         # Use service to get top analytics data
-        result = TopAnalyticsService.get_top_analytics(
-            top=top,
-            filters=filters,
-            start=start,
-            end=end,
-            limit=10,
-        )
+        try:
+            result = TopAnalyticsService.get_top_analytics(
+                top=top,
+                filters=filters,
+                start=start,
+                end=end,
+                limit=10,
+            )
+        except ValueError as e:
+            return Response(
+                {"detail": f"Invalid filter format: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # Paginate results
         paginator = self.pagination_class()

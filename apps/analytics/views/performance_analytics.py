@@ -66,7 +66,17 @@ class PerformanceAnalyticsView(APIView):
                 end=end,
             )
         except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            error_message = str(e)
+            # Check if it's a filter validation error
+            if "filter" in error_message.lower() or "Unsupported filter" in error_message:
+                return Response(
+                    {"detail": f"Invalid filter format: {error_message}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            return Response(
+                {"detail": error_message},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Paginate results
         paginator = self.pagination_class()

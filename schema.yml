@@ -1,0 +1,709 @@
+openapi: 3.0.3
+info:
+  title: Zemen Analytics API
+  version: 1.0.0
+  description: Analytics API for blog views, top analytics, and performance metrics
+paths:
+  /api/analytics/blog-views/:
+    post:
+      operationId: blog_views_analytics_2
+      description: "\n        Get analytics for blog views grouped by country or user.\n
+        \       Returns aggregated data with number of blogs and total views per grouping
+        key.\n        "
+      summary: Get blog views analytics
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlogViewsAnalyticsRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBlogViewsAnalyticsResponseList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+          description: ''
+  /api/analytics/top/:
+    post:
+      operationId: top_analytics_2
+      description: "\n        Get top 10 users, countries, or blogs by total views.\n
+        \       Returns the top performers based on view counts.\n        "
+      summary: Get top analytics
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopAnalyticsRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTopAnalyticsResponseList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+          description: ''
+  /api/analytics/performance/:
+    post:
+      operationId: performance_analytics_2
+      description: "\n        Get performance analytics over time periods with growth
+        metrics.\n        Returns views per period along with growth percentage compared
+        to previous period.\n        "
+      summary: Get performance analytics
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformanceAnalyticsRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPerformanceAnalyticsResponseList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+          description: ''
+  /api/v1/analytics/blog-views/:
+    post:
+      operationId: blog_views_analytics_3
+      description: "\n        Get analytics for blog views grouped by country or user.\n
+        \       Returns aggregated data with number of blogs and total views per grouping
+        key.\n        "
+      summary: Get blog views analytics
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlogViewsAnalyticsRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBlogViewsAnalyticsResponseList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+          description: ''
+  /api/v1/analytics/top/:
+    post:
+      operationId: top_analytics_3
+      description: "\n        Get top 10 users, countries, or blogs by total views.\n
+        \       Returns the top performers based on view counts.\n        "
+      summary: Get top analytics
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopAnalyticsRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTopAnalyticsResponseList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+          description: ''
+  /api/v1/analytics/performance/:
+    post:
+      operationId: performance_analytics_3
+      description: "\n        Get performance analytics over time periods with growth
+        metrics.\n        Returns views per period along with growth percentage compared
+        to previous period.\n        "
+      summary: Get performance analytics
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformanceAnalyticsRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPerformanceAnalyticsResponseList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+          description: ''
+  /analytics/blog-views/:
+    post:
+      operationId: blog_views_analytics
+      description: "\n        Get analytics for blog views grouped by country or user.\n
+        \       Returns aggregated data with number of blogs and total views per grouping
+        key.\n        "
+      summary: Get blog views analytics
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlogViewsAnalyticsRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBlogViewsAnalyticsResponseList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+          description: ''
+  /analytics/top/:
+    post:
+      operationId: top_analytics
+      description: "\n        Get top 10 users, countries, or blogs by total views.\n
+        \       Returns the top performers based on view counts.\n        "
+      summary: Get top analytics
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopAnalyticsRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedTopAnalyticsResponseList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+          description: ''
+  /analytics/performance/:
+    post:
+      operationId: performance_analytics
+      description: "\n        Get performance analytics over time periods with growth
+        metrics.\n        Returns views per period along with growth percentage compared
+        to previous period.\n        "
+      summary: Get performance analytics
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - Analytics
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PerformanceAnalyticsRequestRequest'
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPerformanceAnalyticsResponseList'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  detail:
+                    type: string
+          description: ''
+components:
+  schemas:
+    BlogViewsAnalyticsRequestRequest:
+      type: object
+      description: Request serializer for blog views analytics.
+      properties:
+        start:
+          type: string
+          format: date
+          nullable: true
+          description: Start date in ISO format (YYYY-MM-DD)
+        end:
+          type: string
+          format: date
+          nullable: true
+          description: End date in ISO format (YYYY-MM-DD)
+        filters:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: Dynamic filter tree (optional)
+        object_type:
+          allOf:
+          - $ref: '#/components/schemas/ObjectTypeEnum'
+          default: country
+          description: |-
+            Group by country or user
+
+            * `country` - country
+            * `user` - user
+        range:
+          nullable: true
+          description: |-
+            Time range for aggregation (optional)
+
+            * `month` - month
+            * `week` - week
+            * `year` - year
+            * `day` - day
+          oneOf:
+          - $ref: '#/components/schemas/RangeEnum'
+          - $ref: '#/components/schemas/NullEnum'
+    BlogViewsAnalyticsResponse:
+      type: object
+      description: Response serializer for blog views analytics.
+      properties:
+        x:
+          type: string
+          description: Grouping key (country name or user)
+        y:
+          type: integer
+          description: Number of distinct blogs
+        z:
+          type: integer
+          description: Total views
+      required:
+      - x
+      - y
+      - z
+    CompareEnum:
+      enum:
+      - month
+      - week
+      - day
+      - year
+      type: string
+      description: |-
+        * `month` - month
+        * `week` - week
+        * `day` - day
+        * `year` - year
+    NullEnum:
+      enum:
+      - null
+    ObjectTypeEnum:
+      enum:
+      - country
+      - user
+      type: string
+      description: |-
+        * `country` - country
+        * `user` - user
+    PaginatedBlogViewsAnalyticsResponseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlogViewsAnalyticsResponse'
+    PaginatedPerformanceAnalyticsResponseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PerformanceAnalyticsResponse'
+    PaginatedTopAnalyticsResponseList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TopAnalyticsResponse'
+    PerformanceAnalyticsRequestRequest:
+      type: object
+      description: Request serializer for performance analytics.
+      properties:
+        start:
+          type: string
+          format: date
+          nullable: true
+          description: Start date in ISO format (YYYY-MM-DD)
+        end:
+          type: string
+          format: date
+          nullable: true
+          description: End date in ISO format (YYYY-MM-DD)
+        filters:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: Dynamic filter tree (optional)
+        compare:
+          allOf:
+          - $ref: '#/components/schemas/CompareEnum'
+          default: month
+          description: |-
+            Period size for comparison
+
+            * `month` - month
+            * `week` - week
+            * `day` - day
+            * `year` - year
+        user_id:
+          type: integer
+          nullable: true
+          description: Optional user ID to filter by specific user
+    PerformanceAnalyticsResponse:
+      type: object
+      description: Response serializer for performance analytics.
+      properties:
+        x:
+          type: string
+          description: Period label with blog count
+        y:
+          type: integer
+          description: Views in period
+        z:
+          type: number
+          format: double
+          nullable: true
+          description: Growth percentage vs previous period
+      required:
+      - x
+      - y
+      - z
+    RangeEnum:
+      enum:
+      - month
+      - week
+      - year
+      - day
+      type: string
+      description: |-
+        * `month` - month
+        * `week` - week
+        * `year` - year
+        * `day` - day
+    TopAnalyticsRequestRequest:
+      type: object
+      description: Request serializer for top analytics.
+      properties:
+        start:
+          type: string
+          format: date
+          nullable: true
+          description: Start date in ISO format (YYYY-MM-DD)
+        end:
+          type: string
+          format: date
+          nullable: true
+          description: End date in ISO format (YYYY-MM-DD)
+        filters:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: Dynamic filter tree (optional)
+        top:
+          allOf:
+          - $ref: '#/components/schemas/TopEnum'
+          default: blog
+          description: |-
+            Type of top analytics to retrieve
+
+            * `user` - user
+            * `country` - country
+            * `blog` - blog
+    TopAnalyticsResponse:
+      type: object
+      description: Response serializer for top analytics.
+      properties:
+        x:
+          type: string
+          description: Name/title (varies by top type)
+        y:
+          type: integer
+          description: Blogs count or blog ID (varies by top type)
+        z:
+          type: integer
+          description: Total views
+      required:
+      - x
+      - y
+      - z
+    TopEnum:
+      enum:
+      - user
+      - country
+      - blog
+      type: string
+      description: |-
+        * `user` - user
+        * `country` - country
+        * `blog` - blog
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+tags:
+- name: Analytics
+  description: Analytics endpoints for blog views and performance metrics

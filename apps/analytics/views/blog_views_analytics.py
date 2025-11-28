@@ -57,12 +57,18 @@ class BlogViewsAnalyticsView(APIView):
         end = validated_data.get("end")
 
         # Use service to get analytics data
-        result = BlogViewsAnalyticsService.get_analytics(
-            object_type=object_type,
-            filters=filters,
-            start=start,
-            end=end,
-        )
+        try:
+            result = BlogViewsAnalyticsService.get_analytics(
+                object_type=object_type,
+                filters=filters,
+                start=start,
+                end=end,
+            )
+        except ValueError as e:
+            return Response(
+                {"detail": f"Invalid filter format: {str(e)}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # Paginate results
         paginator = self.pagination_class()

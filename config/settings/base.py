@@ -157,6 +157,8 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SORT_OPERATIONS": False,
     # Hide schemas section in Swagger UI
+    # Note: We keep schemas in the document for reference resolution
+    # but hide them in the UI with defaultModelsExpandDepth: -1
     "SWAGGER_UI_SETTINGS": {
         "defaultModelsExpandDepth": -1,  # Completely hide schemas section
         "docExpansion": "none",
@@ -164,8 +166,4 @@ SPECTACULAR_SETTINGS = {
         "showExtensions": True,
         "showCommonExtensions": True,
     },
-    # Remove schemas from OpenAPI schema
-    "POSTPROCESSING_HOOKS": [
-        "apps.analytics.api.hooks.remove_schemas_from_components",
-    ],
 }
