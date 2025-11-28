@@ -3,3 +3,5 @@ djangorestframework
 python-dotenv
 psycopg2-binary
 django-environ
+drf-spectacular
+factory-boy

@@ -24,4 +24,10 @@ COPY . /app
 # Make scripts executable
 RUN chmod +x scripts/*.sh scripts/*.py 2>/dev/null || true
 
+# Create directories for static and media files
+RUN mkdir -p /app/staticfiles /app/media
+
+# Collect static files
+RUN python manage.py collectstatic --noinput || true
+
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]

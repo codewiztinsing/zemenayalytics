@@ -29,6 +29,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    # Third-party apps
+    "rest_framework",
+    "drf_spectacular",
+    # Local apps
+    "apps.analytics",
 ]
 
 MIDDLEWARE = [
@@ -106,9 +111,61 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files (User uploads)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# REST Framework configuration
+# Pagination settings from environment variables
+API_PAGE_SIZE = int(get_secret("API_PAGE_SIZE", backup=100))
+API_MAX_PAGE_SIZE = int(get_secret("API_MAX_PAGE_SIZE", backup=1000))
+
+REST_FRAMEWORK = {
+    "DEFAULT_VERSIONING_CLASS": "rest_framework.versioning.URLPathVersioning",
+    "DEFAULT_VERSION": "v1",
+    "ALLOWED_VERSIONS": ["v1"],
+    "VERSION_PARAM": "version",
+    "DEFAULT_PAGINATION_CLASS": "apps.analytics.pagination.ConfigurablePageNumberPagination",
+    "PAGE_SIZE": API_PAGE_SIZE,
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
+    "DEFAULT_PARSER_CLASSES": [
+        "rest_framework.parsers.JSONParser",
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# drf-spectacular settings
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Zemen Analytics API",
+    "DESCRIPTION": "Analytics API for blog views, top analytics, and performance metrics",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SCHEMA_PATH_PREFIX": "/api/",
+    "TAGS": [
+        {"name": "Analytics", "description": "Analytics endpoints for blog views and performance metrics"},
+    ],
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SORT_OPERATIONS": False,
+    # Hide schemas section in Swagger UI
+    "SWAGGER_UI_SETTINGS": {
+        "defaultModelsExpandDepth": -1,  # Completely hide schemas section
+        "docExpansion": "none",
+        "filter": True,
+        "showExtensions": True,
+        "showCommonExtensions": True,
+    },
+    # Remove schemas from OpenAPI schema
+    "POSTPROCESSING_HOOKS": [
+        "apps.analytics.api.hooks.remove_schemas_from_components",
+    ],
+}
