@@ -15,6 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+
+API_VERSION = "v1"
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -38,7 +41,7 @@ urlpatterns = [
     path("api/analytics/", include("apps.analytics.api.v1.urls")),
     
     # Versioned API endpoints
-    path("api/v1/analytics/", include("apps.analytics.api.v1.urls")),
+    path(f"api/{API_VERSION}/analytics/", include("apps.analytics.api.v1.urls")),
     
     # Legacy endpoints (deprecated, redirect to v1)
     path("analytics/", include("apps.analytics.api.urls")),
