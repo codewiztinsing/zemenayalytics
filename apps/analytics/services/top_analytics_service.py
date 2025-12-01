@@ -34,11 +34,15 @@ class TopAnalyticsService:
 
         if filters:
             view_qs = view_qs.filter(build_q_from_filter(filters))
-        view_qs = parse_timerange(view_qs, start, end, datetime_field="viewed_at")
+        # Apply time range based on created_at (from BaseModel)
+        view_qs = parse_timerange(view_qs, start, end, datetime_field="created_at")
 
         qs = (
             view_qs
-            .values(author_id=F("blog__author__id"), author_username=F("blog__author__username"))
+            .values(
+                author_id=F("blog__author__id"),
+                author_username=F("blog__author__user__username"),
+            )
             .annotate(total_views=Count("id"), blogs_count=Count("blog_id", distinct=True))
             .order_by("-total_views")[:limit]
         )
@@ -73,7 +77,8 @@ class TopAnalyticsService:
 
         if filters:
             view_qs = view_qs.filter(build_q_from_filter(filters))
-        view_qs = parse_timerange(view_qs, start, end, datetime_field="viewed_at")
+        # Apply time range based on created_at (from BaseModel)
+        view_qs = parse_timerange(view_qs, start, end, datetime_field="created_at")
 
         qs = (
             view_qs
@@ -112,7 +117,8 @@ class TopAnalyticsService:
 
         if filters:
             view_qs = view_qs.filter(build_q_from_filter(filters))
-        view_qs = parse_timerange(view_qs, start, end, datetime_field="viewed_at")
+        # Apply time range based on created_at (from BaseModel)
+        view_qs = parse_timerange(view_qs, start, end, datetime_field="created_at")
 
         qs = (
             view_qs

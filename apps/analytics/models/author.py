@@ -1,6 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
-class Author(models.Model):
+from apps.analytics.utils.base import BaseModel
+
+
+
+
+class Author(BaseModel):
     """
     Author model.
     """

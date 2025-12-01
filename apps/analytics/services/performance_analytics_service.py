@@ -196,13 +196,16 @@ class PerformanceAnalyticsService:
             filters=filters, user_id=user_id
         )
 
+        logger.info(f"Filter Q: {filter_q}")
+
         # Query view aggregates
         # If no filters, use "all" aggregates (blog=null, country=null, author=null)
         # If filters exist, use aggregates matching those filters
         view_qs = BlogViewTimeSeriesAggregate.objects.filter(
             granularity=granularity
         )
-        
+
+        logger.info(f"View Q Count: {view_qs.count()}")
         if filter_q:
             # Apply filters - get aggregates matching the filter criteria
             view_qs = view_qs.filter(filter_q)

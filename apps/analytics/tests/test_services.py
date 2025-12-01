@@ -3,7 +3,7 @@ Unit tests for analytics services.
 """
 from django.test import TestCase
 from django.contrib.auth.models import User
-from apps.analytics.models import Country, Blog, BlogView
+from apps.analytics.models import Country, Blog, BlogView, Author
 from apps.analytics.services.blog_views_analytics_service import BlogViewsAnalyticsService
 from apps.analytics.services.top_analytics_service import TopAnalyticsService
 from apps.analytics.services.performance_analytics_service import PerformanceAnalyticsService
@@ -36,14 +36,17 @@ class BlogViewsAnalyticsServiceTest(TestCase):
             name="Ethiopia",
             continent="Africa"
         )
+        # Create authors for users
+        self.author1 = Author.objects.create(user=self.user1)
+        self.author2 = Author.objects.create(user=self.user2)
         self.blog1 = Blog.objects.create(
             title="Blog 1",
-            author=self.user1,
+            author=self.author1,
             country=self.country1
         )
         self.blog2 = Blog.objects.create(
             title="Blog 2",
-            author=self.user2,
+            author=self.author2,
             country=self.country2
         )
         # Create blog views
@@ -128,14 +131,17 @@ class TopAnalyticsServiceTest(TestCase):
             name="United States",
             continent="North America"
         )
+        # Create authors for users
+        self.author1 = Author.objects.create(user=self.user1)
+        self.author2 = Author.objects.create(user=self.user2)
         self.blog1 = Blog.objects.create(
             title="Popular Blog",
-            author=self.user1,
+            author=self.author1,
             country=self.country
         )
         self.blog2 = Blog.objects.create(
             title="Another Blog",
-            author=self.user2,
+            author=self.author2,
             country=self.country
         )
         # Create multiple views for blog1
@@ -211,9 +217,11 @@ class PerformanceAnalyticsServiceTest(TestCase):
             name="United States",
             continent="North America"
         )
+        # Create author for user
+        self.author = Author.objects.create(user=self.user)
         self.blog = Blog.objects.create(
             title="Test Blog",
-            author=self.user,
+            author=self.author,
             country=self.country
         )
         # Create views at different times

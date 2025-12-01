@@ -1,9 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
+from apps.analytics.utils.base import BaseModel
 from .blog import Blog
 
 
-class BlogView(models.Model):
+class BlogView(BaseModel):
     """
     Each record represents a view of a blog.
     We aggregate counts of these rows to compute 'views'.

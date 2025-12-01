@@ -96,7 +96,9 @@ class PerformanceAnalyticsView(APIView):
         # DRF exposes query parameters via request.query_params (a QueryDict)
         # Convert QueryDict to a regular dict and parse JSON fields
         data = {}
-        for key, value in request.query_params.items():
+        params = request.query_params.items()
+        logger.info(f"Params: {params}")
+        for key, value in params:
             logger.debug(f"Query parameter - Key: {key}, Value: {value}")
             # QueryDict returns lists, get the first element
             if isinstance(value, list):
@@ -105,7 +107,8 @@ class PerformanceAnalyticsView(APIView):
             if value == "":
                 value = None
             data[key] = value
-        
+
+        logger.info(f"Data: {data}")
         # Parse filters from JSON string if provided
         if "filters" in data and data["filters"]:
             try:

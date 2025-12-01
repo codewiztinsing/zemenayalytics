@@ -7,7 +7,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from rest_framework import status
-from apps.analytics.models import Country, Blog, BlogView
+from apps.analytics.models import Country, Blog, BlogView, Author
 from datetime import datetime, timedelta
 from django.utils import timezone
 
@@ -23,6 +23,8 @@ class BlogViewsAnalyticsViewTest(TestCase):
             email="test@example.com",
             password="testpass123"
         )
+        # Create Author for this user
+        self.author = Author.objects.create(user=self.user)
         self.country = Country.objects.create(
             code="US",
             name="United States",
@@ -30,7 +32,7 @@ class BlogViewsAnalyticsViewTest(TestCase):
         )
         self.blog = Blog.objects.create(
             title="Test Blog",
-            author=self.user,
+            author=self.author,
             country=self.country
         )
         # Create some views
@@ -119,6 +121,8 @@ class TopAnalyticsViewTest(TestCase):
             email="test@example.com",
             password="testpass123"
         )
+        # Create Author for this user
+        self.author = Author.objects.create(user=self.user)
         self.country = Country.objects.create(
             code="US",
             name="United States",
@@ -126,7 +130,7 @@ class TopAnalyticsViewTest(TestCase):
         )
         self.blog = Blog.objects.create(
             title="Popular Blog",
-            author=self.user,
+            author=self.author,
             country=self.country
         )
         # Create multiple views
@@ -202,6 +206,8 @@ class PerformanceAnalyticsViewTest(TestCase):
             email="test@example.com",
             password="testpass123"
         )
+        # Create Author for this user
+        self.author = Author.objects.create(user=self.user)
         self.country = Country.objects.create(
             code="US",
             name="United States",
@@ -209,7 +215,7 @@ class PerformanceAnalyticsViewTest(TestCase):
         )
         self.blog = Blog.objects.create(
             title="Test Blog",
-            author=self.user,
+            author=self.author,
             country=self.country
         )
         # Create views at different times

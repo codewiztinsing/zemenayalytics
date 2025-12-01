@@ -42,7 +42,8 @@ class TimeSeriesService:
             view_qs = view_qs.filter(q)
         
         # Apply time range to the view timestamp
-        view_qs = parse_timerange(view_qs, start, end, datetime_field="viewed_at")
+        # Apply time range based on created_at (from BaseModel)
+        view_qs = parse_timerange(view_qs, start, end, datetime_field="created_at")
         
         # Get truncation function for the specified granularity
         trunc_func = TRUNC_MAP[granularity]

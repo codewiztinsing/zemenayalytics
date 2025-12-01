@@ -27,10 +27,35 @@ class BlogViewAdmin(admin.ModelAdmin):
 
 
 class AuthorAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "bio", "number_of_blogs", "number_of_views", "number_of_likes", "number_of_comments", "number_of_shares", "number_of_reactions", "number_of_followers", "number_of_following")
-    list_filter = ("number_of_blogs", "number_of_views", "number_of_likes", "number_of_comments", "number_of_shares", "number_of_reactions", "number_of_followers", "number_of_following")
+    list_display = (
+        "id",
+        "user",
+        "bio",
+        "number_of_blogs",
+        "number_of_views",
+        "number_of_likes",
+        "number_of_comments",
+        "number_of_shares",
+        "number_of_reactions",
+        "number_of_followers",
+        "number_of_following",
+        "created_at",
+        "updated_at",
+    )
+    list_filter = (
+        "number_of_blogs",
+        "number_of_views",
+        "number_of_likes",
+        "number_of_comments",
+        "number_of_shares",
+        "number_of_reactions",
+        "number_of_followers",
+        "number_of_following",
+        "created_at",
+        "updated_at",
+    )
     search_fields = ("user__username", "user__email")
-    ordering = ("-number_of_views",)
+    ordering = ("-number_of_views", "-created_at")
     raw_id_fields = ("user",)
 
 

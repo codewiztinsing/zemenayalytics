@@ -3,7 +3,7 @@ Unit tests for analytics models.
 """
 from django.test import TestCase
 from django.contrib.auth.models import User
-from apps.analytics.models import Country, Blog, BlogView
+from apps.analytics.models import Country, Blog, BlogView, Author
 from datetime import datetime
 
 
@@ -55,6 +55,8 @@ class BlogModelTest(TestCase):
             first_name="Test",
             last_name="User"
         )
+        # Blog.author now points to Author, so create corresponding Author
+        self.author = Author.objects.create(user=self.user)
         self.country = Country.objects.create(
             code="ET",
             name="Ethiopia",
@@ -62,14 +64,16 @@ class BlogModelTest(TestCase):
         )
         self.blog = Blog.objects.create(
             title="Test Blog Post",
-            author=self.user,
+            author=self.author,
             country=self.country
         )
 
     def test_blog_creation(self):
         """Test blog creation."""
         self.assertEqual(self.blog.title, "Test Blog Post")
-        self.assertEqual(self.blog.author, self.user)
+        # Blog.author is an Author instance linked to the user
+        self.assertEqual(self.blog.author, self.author)
+        self.assertEqual(self.blog.author.user, self.user)
         self.assertEqual(self.blog.country, self.country)
         self.assertIsNotNone(self.blog.created_at)
 
@@ -86,7 +90,7 @@ class BlogModelTest(TestCase):
         """Test blog can be created without country."""
         blog = Blog.objects.create(
             title="Blog Without Country",
-            author=self.user,
+            author=self.author,
             country=None
         )
         self.assertIsNone(blog.country)
@@ -115,11 +119,13 @@ class BlogViewModelTest(TestCase):
             email="viewer@example.com",
             password="testpass123"
         )
-        self.author = User.objects.create_user(
+        author_user = User.objects.create_user(
             username="author",
             email="author@example.com",
             password="testpass123"
         )
+        # Create Author instance for the blog author
+        self.author = Author.objects.create(user=author_user)
         self.country = Country.objects.create(
             code="KE",
             name="Kenya",

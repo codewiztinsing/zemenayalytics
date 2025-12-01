@@ -1,7 +1,8 @@
 from django.db import models
+from apps.analytics.utils.base import BaseModel 
 
 
-class Country(models.Model):
+class Country(BaseModel):
     """
     Simple Country model used in examples.
     """
