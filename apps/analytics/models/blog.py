@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from .country import Country
+from .author import Author
 
 
 class Blog(models.Model):
@@ -8,7 +9,7 @@ class Blog(models.Model):
     Blog/post model. Key fields used by analytics: author, country, created_at.
     """
     title = models.CharField(max_length=255)
-    author = models.ForeignKey(User, related_name="blogs", on_delete=models.CASCADE)
+    author = models.ForeignKey(Author, related_name="blogs", on_delete=models.CASCADE)
     country = models.ForeignKey(Country, on_delete=models.SET_NULL, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -16,7 +17,7 @@ class Blog(models.Model):
         return self.title
 
     def get_author_name(self):
-        return f"{self.author.first_name} {self.author.last_name}"
+        return f"{self.author.user.first_name} {self.author.user.last_name}"
 
     class Meta:
         verbose_name = "Blog"

@@ -19,7 +19,7 @@ API_MAX_PAGE_SIZE=1000               # Maximum page size allowed (default: 1000)
 
 
 # Factory Boy Data Population Configuration
-FACTORY_COUNTRIES=200        # Number of countries to create (default: 10)
-FACTORY_BLOGS=6000           # Number of blogs to create (default: 50)
-FACTORY_BLOG_VIEWS=5000    # Number of blog views to create (default: 500)
-FACTORY_USERS=5000            # Number of users to create (default: 5)
+FACTORY_COUNTRIES=100        # Number of countries to create (default: 10)
+FACTORY_BLOGS=100           # Number of blogs to create (default: 50)
+FACTORY_BLOG_VIEWS=100    # Number of blog views to create (default: 500)
+FACTORY_USERS=100            # Number of users to create (default: 5)

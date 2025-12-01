@@ -26,6 +26,7 @@ from apps.analytics.serializers.blog_views_analytics import (
 )
 from apps.analytics.pagination import ConfigurablePageNumberPagination
 from apps.analytics.services.blog_views_analytics_service import BlogViewsAnalyticsService
+from config.logger import logger
 
 
 class BlogViewsAnalyticsView(APIView):
@@ -49,12 +50,6 @@ class BlogViewsAnalyticsView(APIView):
                 required=False,
                 type=str,
                 enum=["country", "user"]
-            ),
-            OpenApiParameter(
-                name="filters",
-                description="The filters to apply to the analytics",
-                required=False,
-                type=dict
             ),
             OpenApiParameter(
                 name="start",
@@ -98,10 +93,14 @@ class BlogViewsAnalyticsView(APIView):
         """
         Handle GET requests using query parameters to retrieve blog views analytics.
         """
+        logger.info(f"Blog views analytics request received from {request.META.get('REMOTE_ADDR', 'unknown')}")
+        
         # DRF exposes query parameters via request.query_params (a QueryDict)
         # Convert QueryDict to a regular dict and parse JSON fields
         data = {}
-        for key, value in request.query_params.items():
+        params = request.query_params.items()
+        for key, value in params:
+            logger.debug(f"Query parameter - Key: {key}, Value: {value}")
             # QueryDict returns lists, get the first element
             if isinstance(value, list):
                 value = value[0] if value else None
@@ -110,23 +109,31 @@ class BlogViewsAnalyticsView(APIView):
                 value = None
             data[key] = value
         
+
+        logger.debug(f"Data: {data}")
         # Parse filters from JSON string if provided
         if "filters" in data and data["filters"]:
             try:
                 # Parse JSON string to dict
                 data["filters"] = json.loads(data["filters"])
-            except (json.JSONDecodeError, TypeError):
+                logger.debug(f"Parsed filters: {data['filters']}")
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Failed to parse filters JSON: {e}")
                 # If it's not valid JSON, pass it as-is and let serializer handle validation
                 pass
         
         serializer = BlogViewsAnalyticsRequestSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            logger.warning(f"Invalid request data: {serializer.errors}")
+            serializer.is_valid(raise_exception=True)
         
         validated_data = serializer.validated_data
         object_type = validated_data.get("object_type", "country")
         filters = validated_data.get("filters")
         start = validated_data.get("start")
         end = validated_data.get("end")
+
+        logger.info(f"Fetching blog views analytics - object_type: {object_type}, start: {start}, end: {end}")
 
         # Use service to get analytics data
         try:
@@ -136,16 +143,25 @@ class BlogViewsAnalyticsView(APIView):
                 start=start,
                 end=end,
             )
+            logger.info(f"Successfully retrieved {len(result)} analytics records")
         except ValueError as e:
+            logger.error(f"Invalid filter format: {str(e)}")
             return Response(
                 {"detail": f"Invalid filter format: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in blog views analytics: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "An error occurred while processing your request"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
         # Paginate results
         paginator = self.pagination_class()
         paginated_result = paginator.paginate_queryset(result, request)
         response_serializer = BlogViewsAnalyticsResponseSerializer(paginated_result, many=True)
+        logger.debug(f"Returning paginated response with {len(paginated_result)} items")
         return paginator.get_paginated_response(response_serializer.data)
 
 

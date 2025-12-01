@@ -1,6 +1,8 @@
 """
 Unit tests for analytics views.
 """
+import json
+from urllib.parse import quote
 from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
@@ -37,11 +39,8 @@ class BlogViewsAnalyticsViewTest(TestCase):
 
     def test_blog_views_analytics_by_country(self):
         """Test blog views analytics endpoint with country grouping."""
-        url = "/api/v1/analytics/blog-views/"
-        data = {
-            "object_type": "country"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/blog-views/?object_type=country"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("results", response.data)
@@ -49,67 +48,50 @@ class BlogViewsAnalyticsViewTest(TestCase):
 
     def test_blog_views_analytics_by_user(self):
         """Test blog views analytics endpoint with user grouping."""
-        url = "/api/v1/analytics/blog-views/"
-        data = {
-            "object_type": "user"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/blog-views/?object_type=user"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("results", response.data)
 
     def test_blog_views_analytics_with_filters(self):
         """Test blog views analytics endpoint with filters."""
-        url = "/api/v1/analytics/blog-views/"
-        data = {
-            "object_type": "country",
-            "filters": {
-                "eq": {
-                    "field": "blog.country.code",
-                    "value": "US"
-                }
+        filters = json.dumps({
+            "eq": {
+                "field": "blog.country.code",
+                "value": "US"
             }
-        }
-        response = self.client.post(url, data, format="json")
+        })
+        url = f"/api/v1/analytics/blog-views/?object_type=country&filters={quote(filters)}"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_blog_views_analytics_with_date_range(self):
         """Test blog views analytics endpoint with date range."""
-        url = "/api/v1/analytics/blog-views/"
         start = (timezone.now() - timedelta(days=30)).date().isoformat()
         end = timezone.now().date().isoformat()
-        data = {
-            "object_type": "country",
-            "start": start,
-            "end": end
-        }
-        response = self.client.post(url, data, format="json")
+        url = f"/api/v1/analytics/blog-views/?object_type=country&start={start}&end={end}"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_blog_views_analytics_invalid_data(self):
         """Test blog views analytics endpoint with invalid data."""
-        url = "/api/v1/analytics/blog-views/"
-        data = {
-            "object_type": "invalid_type"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/blog-views/?object_type=invalid_type"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_blog_views_analytics_invalid_filter_format(self):
         """Test blog views analytics endpoint with invalid filter format."""
-        url = "/api/v1/analytics/blog-views/"
         # Test with Swagger's additionalProp pattern (invalid)
-        data = {
-            "object_type": "country",
-            "filters": {
-                "additionalProp1": "string",
-                "additionalProp2": "string"
-            }
-        }
-        response = self.client.post(url, data, format="json")
+        filters = json.dumps({
+            "additionalProp1": "string",
+            "additionalProp2": "string"
+        })
+        url = f"/api/v1/analytics/blog-views/?object_type=country&filters={quote(filters)}"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("filter", response.data.get("filters", [""])[0].lower() if isinstance(response.data.get("filters"), list) else str(response.data).lower())
@@ -119,11 +101,8 @@ class BlogViewsAnalyticsViewTest(TestCase):
         # Delete all views
         BlogView.objects.all().delete()
         
-        url = "/api/v1/analytics/blog-views/"
-        data = {
-            "object_type": "country"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/blog-views/?object_type=country"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 0)
@@ -156,11 +135,8 @@ class TopAnalyticsViewTest(TestCase):
 
     def test_top_analytics_blogs(self):
         """Test top analytics endpoint for blogs."""
-        url = "/api/v1/analytics/top/"
-        data = {
-            "top": "blog"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/top/?top=blog"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("results", response.data)
@@ -168,74 +144,44 @@ class TopAnalyticsViewTest(TestCase):
 
     def test_top_analytics_users(self):
         """Test top analytics endpoint for users."""
-        url = "/api/v1/analytics/top/"
-        data = {
-            "top": "user"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/top/?top=user"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("results", response.data)
 
     def test_top_analytics_countries(self):
         """Test top analytics endpoint for countries."""
-        url = "/api/v1/analytics/top/"
-        data = {
-            "top": "country"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/top/?top=country"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("results", response.data)
 
     def test_top_analytics_with_filters(self):
         """Test top analytics endpoint with filters."""
-        url = "/api/v1/analytics/top/"
-        data = {
-            "top": "blog",
-            "filters": {
-                "eq": {
-                    "field": "blog.country.code",
-                    "value": "US"
-                }
+        filters = json.dumps({
+            "eq": {
+                "field": "blog.country.code",
+                "value": "US"
             }
-        }
-        response = self.client.post(url, data, format="json")
+        })
+        url = f"/api/v1/analytics/top/?top=blog&filters={quote(filters)}"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_top_analytics_invalid_type(self):
         """Test top analytics endpoint with invalid type."""
-        url = "/api/v1/analytics/top/"
-        data = {
-            "top": "invalid"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/top/?top=invalid"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_top_analytics_pagination(self):
         """Test that top analytics response is paginated."""
-        url = "/api/v1/analytics/top/"
-        data = {
-            "top": "blog"
-        }
-        response = self.client.post(url, data, format="json")
-        
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Check pagination structure
-        self.assertIn("count", response.data)
-        self.assertIn("next", response.data)
-        self.assertIn("previous", response.data)
-        self.assertIn("results", response.data)
-
-    def test_top_analytics_pagination(self):
-        """Test that top analytics response is paginated."""
-        url = "/api/v1/analytics/top/"
-        data = {
-            "top": "blog"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/top/?top=blog"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Check pagination structure
@@ -277,11 +223,8 @@ class PerformanceAnalyticsViewTest(TestCase):
 
     def test_performance_analytics_month(self):
         """Test performance analytics endpoint with month comparison."""
-        url = "/api/v1/analytics/performance/"
-        data = {
-            "compare": "month"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/performance/?compare=month"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("results", response.data)
@@ -289,68 +232,49 @@ class PerformanceAnalyticsViewTest(TestCase):
 
     def test_performance_analytics_week(self):
         """Test performance analytics endpoint with week comparison."""
-        url = "/api/v1/analytics/performance/"
-        data = {
-            "compare": "week"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/performance/?compare=week"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_performance_analytics_day(self):
         """Test performance analytics endpoint with day comparison."""
-        url = "/api/v1/analytics/performance/"
-        data = {
-            "compare": "day"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/performance/?compare=day"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_performance_analytics_year(self):
         """Test performance analytics endpoint with year comparison."""
-        url = "/api/v1/analytics/performance/"
-        data = {
-            "compare": "year"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/performance/?compare=year"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_performance_analytics_with_user_id(self):
         """Test performance analytics endpoint with user filter."""
-        url = "/api/v1/analytics/performance/"
-        data = {
-            "compare": "month",
-            "user_id": self.user.id
-        }
-        response = self.client.post(url, data, format="json")
+        url = f"/api/v1/analytics/performance/?compare=month&user_id={self.user.id}"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_performance_analytics_with_filters(self):
         """Test performance analytics endpoint with filters."""
-        url = "/api/v1/analytics/performance/"
-        data = {
-            "compare": "month",
-            "filters": {
-                "eq": {
-                    "field": "blog.country.code",
-                    "value": "US"
-                }
+        filters = json.dumps({
+            "eq": {
+                "field": "blog.country.code",
+                "value": "US"
             }
-        }
-        response = self.client.post(url, data, format="json")
+        })
+        url = f"/api/v1/analytics/performance/?compare=month&filters={quote(filters)}"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_performance_analytics_invalid_compare(self):
         """Test performance analytics endpoint with invalid compare value."""
-        url = "/api/v1/analytics/performance/"
-        data = {
-            "compare": "invalid"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/performance/?compare=invalid"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         # Check that there's an error in the response (could be "detail" or field-level error)
@@ -358,11 +282,8 @@ class PerformanceAnalyticsViewTest(TestCase):
 
     def test_performance_analytics_pagination(self):
         """Test that performance analytics response is paginated."""
-        url = "/api/v1/analytics/performance/"
-        data = {
-            "compare": "day"
-        }
-        response = self.client.post(url, data, format="json")
+        url = "/api/v1/analytics/performance/?compare=day"
+        response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Check pagination structure

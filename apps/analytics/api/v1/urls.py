@@ -5,8 +5,7 @@ from django.urls import path
 from apps.analytics.views import (
     BlogViewsAnalyticsView,
     TopAnalyticsView,
-    PerformanceAnalyticsView,
-)
+    PerformanceAnalyticsView)
 
 app_name = "analytics_v1"
 

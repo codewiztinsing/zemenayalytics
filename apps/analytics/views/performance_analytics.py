@@ -25,6 +25,7 @@ from apps.analytics.serializers.performance_analytics import (
 )
 from apps.analytics.pagination import ConfigurablePageNumberPagination
 from apps.analytics.services.performance_analytics_service import PerformanceAnalyticsService
+from config.logger import logger
 
 
 class PerformanceAnalyticsView(APIView):
@@ -54,12 +55,6 @@ class PerformanceAnalyticsView(APIView):
                 description="Optional user ID to filter performance for a single user",
                 required=False,
                 type=int
-            ),
-            OpenApiParameter(
-                name="filters",
-                description="The filters to apply to the analytics",
-                required=False,
-                type=dict
             ),
             OpenApiParameter(
                 name="start",
@@ -96,10 +91,13 @@ class PerformanceAnalyticsView(APIView):
         """
         Handle GET requests using query parameters to retrieve performance analytics.
         """
+        logger.info(f"Performance analytics request received from {request.META.get('REMOTE_ADDR', 'unknown')}")
+        
         # DRF exposes query parameters via request.query_params (a QueryDict)
         # Convert QueryDict to a regular dict and parse JSON fields
         data = {}
         for key, value in request.query_params.items():
+            logger.debug(f"Query parameter - Key: {key}, Value: {value}")
             # QueryDict returns lists, get the first element
             if isinstance(value, list):
                 value = value[0] if value else None
@@ -113,12 +111,16 @@ class PerformanceAnalyticsView(APIView):
             try:
                 # Parse JSON string to dict
                 data["filters"] = json.loads(data["filters"])
-            except (json.JSONDecodeError, TypeError):
+                logger.debug(f"Parsed filters: {data['filters']}")
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Failed to parse filters JSON: {e}")
                 # If it's not valid JSON, pass it as-is and let serializer handle validation
                 pass
         
         serializer = PerformanceAnalyticsRequestSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            logger.warning(f"Invalid request data: {serializer.errors}")
+            serializer.is_valid(raise_exception=True)
         
         validated_data = serializer.validated_data
         compare = validated_data.get("compare", "month")
@@ -126,6 +128,8 @@ class PerformanceAnalyticsView(APIView):
         user_id = validated_data.get("user_id")
         start = validated_data.get("start")
         end = validated_data.get("end")
+
+        logger.info(f"Fetching performance analytics - compare: {compare}, user_id: {user_id}, start: {start}, end: {end}")
 
         try:
             # Use service to get performance analytics data
@@ -136,8 +140,10 @@ class PerformanceAnalyticsView(APIView):
                 start=start,
                 end=end,
             )
+            logger.info(f"Successfully retrieved {len(result)} performance analytics records")
         except ValueError as e:
             error_message = str(e)
+            logger.error(f"Invalid parameter in performance analytics: {error_message}")
             # Check if it's a filter validation error
             if "filter" in error_message.lower() or "Unsupported filter" in error_message:
                 return Response(
@@ -148,9 +154,16 @@ class PerformanceAnalyticsView(APIView):
                 {"detail": error_message},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        except Exception as e:
+            logger.error(f"Unexpected error in performance analytics: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "An error occurred while processing your request"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
         # Paginate results
         paginator = self.pagination_class()
         paginated_result = paginator.paginate_queryset(result, request)
         response_serializer = PerformanceAnalyticsResponseSerializer(paginated_result, many=True)
+        logger.debug(f"Returning paginated response with {len(paginated_result)} items")
         return paginator.get_paginated_response(response_serializer.data)

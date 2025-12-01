@@ -20,6 +20,7 @@ from apps.analytics.serializers.top_analytics import (
 )
 from apps.analytics.pagination import ConfigurablePageNumberPagination
 from apps.analytics.services.top_analytics_service import TopAnalyticsService
+from config.logger import logger
 
 
 class TopAnalyticsView(APIView):
@@ -43,12 +44,6 @@ class TopAnalyticsView(APIView):
                 required=False,
                 type=str,
                 enum=["user", "country", "blog"]
-            ),
-            OpenApiParameter(
-                name="filters",
-                description="The filters to apply to the analytics",
-                required=False,
-                type=dict
             ),
             OpenApiParameter(
                 name="start",
@@ -91,10 +86,13 @@ class TopAnalyticsView(APIView):
         """
         Handle GET requests using query parameters to retrieve top analytics.
         """
+        logger.info(f"Top analytics request received from {request.META.get('REMOTE_ADDR', 'unknown')}")
+        
         # DRF exposes query parameters via request.query_params (a QueryDict)
         # Convert QueryDict to a regular dict and parse JSON fields
         data = {}
         for key, value in request.query_params.items():
+            logger.debug(f"Query parameter - Key: {key}, Value: {value}")
             # QueryDict returns lists, get the first element
             if isinstance(value, list):
                 value = value[0] if value else None
@@ -108,18 +106,24 @@ class TopAnalyticsView(APIView):
             try:
                 # Parse JSON string to dict
                 data["filters"] = json.loads(data["filters"])
-            except (json.JSONDecodeError, TypeError):
+                logger.debug(f"Parsed filters: {data['filters']}")
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(f"Failed to parse filters JSON: {e}")
                 # If it's not valid JSON, pass it as-is and let serializer handle validation
                 pass
         
         serializer = TopAnalyticsRequestSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            logger.warning(f"Invalid request data: {serializer.errors}")
+            serializer.is_valid(raise_exception=True)
         
         validated_data = serializer.validated_data
         top = validated_data.get("top", "blog")
         filters = validated_data.get("filters")
         start = validated_data.get("start")
         end = validated_data.get("end")
+
+        logger.info(f"Fetching top analytics - top: {top}, start: {start}, end: {end}")
 
         # Use service to get top analytics data
         try:
@@ -130,15 +134,24 @@ class TopAnalyticsView(APIView):
                 end=end,
                 limit=10,
             )
+            logger.info(f"Successfully retrieved {len(result)} top analytics records")
         except ValueError as e:
+            logger.error(f"Invalid filter format: {str(e)}")
             return Response(
                 {"detail": f"Invalid filter format: {str(e)}"},
                 status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error in top analytics: {str(e)}", exc_info=True)
+            return Response(
+                {"detail": "An error occurred while processing your request"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
         
         # Paginate results
         paginator = self.pagination_class()
         paginated_result = paginator.paginate_queryset(result, request)
         response_serializer = TopAnalyticsResponseSerializer(paginated_result, many=True)
+        logger.debug(f"Returning paginated response with {len(paginated_result)} items")
         return paginator.get_paginated_response(response_serializer.data)
 

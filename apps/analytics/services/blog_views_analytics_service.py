@@ -6,6 +6,7 @@ from django.db.models import Count, F, QuerySet
 from apps.analytics.models import BlogView
 from apps.analytics.utils.filters import build_q_from_filter
 from apps.analytics.utils.helpers import parse_timerange
+from config.logger import logger
 
 
 class BlogViewsAnalyticsService:
@@ -28,12 +29,14 @@ class BlogViewsAnalyticsService:
         Returns:
             List of dictionaries with x (country name), y (number of blogs), z (total views)
         """
+        logger.debug(f"Getting analytics by country - filters: {filters}, start: {start}, end: {end}")
         view_qs = BlogView.objects.select_related("blog__author", "blog__country")
 
         # Apply dynamic filters if provided
         if filters:
             q = build_q_from_filter(filters)
             view_qs = view_qs.filter(q)
+            logger.debug(f"Applied filters, queryset count: {view_qs.count()}")
 
         # Apply time range to the view timestamp
         view_qs = parse_timerange(view_qs, start, end, datetime_field="viewed_at")
@@ -52,6 +55,7 @@ class BlogViewsAnalyticsService:
             for r in agg_qs
         ]
 
+        logger.info(f"Retrieved {len(result)} country analytics records")
         return result
 
     @staticmethod
@@ -84,7 +88,7 @@ class BlogViewsAnalyticsService:
         # Aggregate by user
         agg_qs = (
             view_qs
-            .values(author_username=F("blog__author__username"), author_id=F("blog__author__id"))
+            .values(author_username=F("blog__author__user__username"), author_id=F("blog__author__user__id"))
             .annotate(number_of_blogs=Count("blog", distinct=True), total_views=Count("id"))
             .order_by("-total_views")
         )
@@ -95,6 +99,7 @@ class BlogViewsAnalyticsService:
             for r in agg_qs
         ]
 
+        logger.info(f"Retrieved {len(result)} user analytics records")
         return result
 
     @staticmethod
@@ -116,6 +121,7 @@ class BlogViewsAnalyticsService:
         Returns:
             List of dictionaries with analytics data
         """
+        logger.debug(f"Getting analytics for object_type: {object_type}")
         if object_type == "user":
             return BlogViewsAnalyticsService.get_analytics_by_user(filters, start, end)
         else:
