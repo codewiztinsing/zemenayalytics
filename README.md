@@ -17,7 +17,7 @@ The application is containerized with Docker and exposes a REST API documented v
 - **Task queue**: Celery
 - **Scheduler**: django-celery-beat
 - **Broker / result backend**: Redis
-- **Database**: SQLite (local) with PostgreSQL-ready configuration via environment variables
+- **Database**: With PostgreSQL-ready configuration via environment variables
 - **API documentation**: drf-spectacular (OpenAPI 3)
 - **Testing**: pytest, pytest-django, factory-boy
 - **Containers**: Docker, Docker Compose
@@ -130,8 +130,8 @@ Typical workflow:
 3. Create a superuser (optional, for admin):
    - `docker compose exec dev python manage.py createsuperuser`
 4. Access the API and admin:
-   - Django dev server: `http://localhost:8000/`
-   - Admin: `http://localhost:8000/admin/`
+   - Django dev server: `http://127.0.0.01:8000/api/docs/`
+   - Admin: `http://127.0.0.01:8000/admin/`
    - API schema / docs (depending on URLs configured): for example, `/schema/`, `/docs/`
 
 
