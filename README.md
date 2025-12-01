@@ -107,7 +107,7 @@ A high-performance Django REST API for blog analytics with time-series aggregati
 
 ### Environment Variables
 
-Create a `.env` file in the project root with the following variables:
+Create a `env.example` file in the project root with the following variables:
 
 ```env
 # Django
