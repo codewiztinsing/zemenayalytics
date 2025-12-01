@@ -150,7 +150,7 @@ Typical workflow:
     - `celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler`
   - In Docker, these are separate services; logs will show when periodic tasks are dispatched and executed.
 
-- **Testing that beat aggregates correctly (conceptual)**
+- **Testing that beat aggregates correctly (conceptual) -- use admin page please**
   - Seed a known small dataset (few blogs and views for specific dates).
   - Temporarily set beat intervals to short periods in `django_celery_beat` for local dev.
   - Watch `celery_beat` and `celery_worker` logs for task execution.
