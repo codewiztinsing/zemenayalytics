@@ -1,31 +1,29 @@
 Zemen Analytics
 ================
 
-Zemen Analytics is a Django-based analytics service that tracks blog activity and provides rich, API-driven insights about:
+Zemen Analytics is a Django-based analytics service for tracking blog activity and surfacing API-driven insights about:
 
 - Blog performance over time (views and creations)
 - Top blogs, authors, and countries
 - Blog view analytics grouped by users or countries
 - Compressive time-series aggregates powered by Celery and django-celery-beat
 
-The project is containerized with Docker and exposes a REST API documented via OpenAPI/Swagger using `drf-spectacular`.
+The application is containerized with Docker and exposes a REST API documented via OpenAPI/Swagger using `drf-spectacular`.
 
 
-1. Technology Stack
--------------------
+## Technology Stack
 
 - **Backend**: Django, Django REST Framework
 - **Task queue**: Celery
 - **Scheduler**: django-celery-beat
-- **Broker/Backend**: Redis (for Celery)
-- **Database**: SQLite (local) / PostgreSQL-ready via environment variables
+- **Broker / result backend**: Redis
+- **Database**: SQLite (local) with PostgreSQL-ready configuration via environment variables
 - **API documentation**: drf-spectacular (OpenAPI 3)
 - **Testing**: pytest, pytest-django, factory-boy
 - **Containers**: Docker, Docker Compose
 
 
-2. Core Domain Models
----------------------
+## Core Domain Models
 
 - **Country**
   - Fields: `code`, `name`, `continent`, `created_at`, `updated_at`
@@ -54,12 +52,11 @@ The project is containerized with Docker and exposes a REST API documented via O
   - Used by performance analytics to answer queries without scanning raw rows.
 
 
-3. Key Features
----------------
+## Key Features
 
 - **Centralized, colored logging**
   - Configured in `config/settings/base.py` with `colorlog` (when installed).
-  - Console output uses colors (INFO green, WARNING yellow, ERROR red) and file logging to `logs/django.log`.
+  - Console output uses colors (INFO green, WARNING yellow, ERROR red) and file logging to `logs/django.log` for easier troubleshooting.
 
 - **Comprehensive analytics**
   - Blog Views Analytics (`/analytics/blog-views/`):
@@ -72,9 +69,9 @@ The project is containerized with Docker and exposes a REST API documented via O
   - Performance Analytics (`/analytics/performance/`):
     - Time-series performance for a user or all users.
     - Compare by `day`, `week`, `month`, or `year`.
-    - x = period label + number of blogs created.
-    - y = views during the period.
-    - z = growth/decline percentage vs previous period.
+    - `x` = period label + number of blogs created.
+    - `y` = views during the period.
+    - `z` = growth/decline percentage vs previous period.
 
 - **Compressive time series with Celery**
   - Celery tasks aggregate raw `Blog` and `BlogView` data into time-series tables at multiple granularities.
@@ -87,18 +84,15 @@ The project is containerized with Docker and exposes a REST API documented via O
   - Schema components are cleaned to keep pagination and response schemas while removing noisy request schemas.
 
 
-4. Running the Project
-----------------------
+## Running the Project
 
-4.1. Requirements
-~~~~~~~~~~~~~~~~~
+### Requirements
 
 - Docker and Docker Compose
 - Optional: Python 3.11+ and a virtualenv if you want to run Django directly without Docker
 
 
-4.2. Environment Variables
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Environment Variables
 
 Create a `.env` file in the project root. The typical variables include:
 
@@ -117,9 +111,7 @@ Create a `.env` file in the project root. The typical variables include:
 
 Defaults are configured so local development can fall back to SQLite when no PostgreSQL env vars are provided.
 
-
-4.3. Using Docker Compose (recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+### Using Docker Compose (recommended)
 
 The `docker-compose.yml` file defines services like:
 
@@ -140,11 +132,10 @@ Typical workflow:
 4. Access the API and admin:
    - Django dev server: `http://localhost:8000/`
    - Admin: `http://localhost:8000/admin/`
-   - API schema / docs (depending on URLs configured): e.g. `/schema/`, `/docs/`
+   - API schema / docs (depending on URLs configured): for example, `/schema/`, `/docs/`
 
 
-5. Time Series and Celery
--------------------------
+## Time Series and Celery
 
 - **Backfilling aggregates**
   - Use the management command:
@@ -168,8 +159,7 @@ Typical workflow:
   - Inspect aggregate tables (via admin or DB) to verify counts and time buckets are as expected.
 
 
-6. Populating Sample Data
--------------------------
+## Populating Sample Data
 
 There is a custom management command for populating demo data:
 
@@ -185,8 +175,7 @@ After populating data, you can:
 - Run `backfill_time_series` to create aggregates for historical data.
 
 
-7. Testing
-----------
+## Testing
 
 Tests are written with `pytest` and `pytest-django`. Typical commands (inside the dev container):
 
@@ -204,8 +193,7 @@ If migrations change (e.g. new fields on `Country`, `Blog`, or `BlogView`), you 
 - `pytest --reuse-db --create-db`
 
 
-8. Logging and Debugging
-------------------------
+## Logging and Debugging
 
 - Logs:
   - Console logs are colorized when `colorlog` is available.
@@ -220,13 +208,10 @@ If migrations change (e.g. new fields on `Country`, `Blog`, or `BlogView`), you 
 Use the logs to trace analytics requests and Celery activity during development and troubleshooting.
 
 
-9. Conventions and Notes
-------------------------
+## Conventions and Notes
 
 - All analytics time range filters are based on **`created_at`** for `Blog`/`BlogView` when computing analytics, providing a single, consistent timeline.
 - `Blog.author` is always an `Author` instance, not a bare `User`.
 - Raw models for time series have been removed in favor of single-table aggregate models backed by Celery-based background jobs.
 
 For deeper architectural details, see the in-repo documentation in the `docs/` directory (for example, the compressive time-series design notes and time-series population guide).
-
-
