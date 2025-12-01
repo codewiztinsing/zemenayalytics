@@ -177,7 +177,7 @@ After populating data, you can:
 
 ## Testing
 
-Tests are written with `pytest` and `pytest-django`. Typical commands (inside the dev container):
+Tests are written with `pytest` and `pytest-django`. Typical commands (inside the web container):
 
 - Run all tests:
   - `pytest`
