@@ -36,7 +36,7 @@ A high-performance Django REST API for blog analytics with time-series aggregati
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone git@github.com:codewiztinsing/zemenayalytics.git
    cd zemenayalytics
    ```
 
