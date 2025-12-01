@@ -126,10 +126,8 @@ Typical workflow:
 1. Build and start containers:
    - `docker compose up --build`
 2. Apply migrations:
-   - `docker compose exec dev python manage.py migrate`
-3. Create a superuser (optional, for admin):
-   - `docker compose exec dev python manage.py createsuperuser`
-4. Access the API and admin:
+   - `docker compose exec web python manage.py migrate`
+2. Access the API and admin:
    - Django dev server: `http://127.0.0.01:8000/api/docs/`
    - Admin: `http://127.0.0.01:8000/admin/`
    - API schema / docs (depending on URLs configured): for example, `/schema/`, `/docs/`
