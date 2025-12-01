@@ -1,6 +1,6 @@
 import os
 from environ import Env
-
+from config.logger import logger
 # Build paths inside the project
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -37,6 +37,7 @@ def get_secret(secret_id, backup=None):
 
 # Determine which settings to load based on PIPELINE environment variable
 PIPELINE = get_secret("PIPELINE", "local")
+logger.info(f"PIPELINE: {PIPELINE}")
 
 if PIPELINE == "production":
     from .production import *

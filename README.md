@@ -1,7 +1,7 @@
-Zemen Analytics
+Zemenay Analytics
 ================
 
-Zemen Analytics is a Django-based analytics service for tracking blog activity and surfacing API-driven insights about:
+Zemenay Analytics is a Django-based analytics service for tracking blog activity and surfacing API-driven insights about:
 
 - Blog performance over time (views and creations)
 - Top blogs, authors, and countries

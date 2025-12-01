@@ -1,6 +1,6 @@
 from .base import *
 from config.settings import get_secret
-
+from config.logger import logger
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
@@ -10,6 +10,12 @@ DB_USER = get_secret("DB_USER")
 DB_PASSWORD = get_secret("DB_PASSWORD")
 DB_HOST = get_secret("DB_HOST", "db")  # Default to 'db' for docker-compose service name
 DB_PORT = get_secret("DB_PORT", "5432")
+
+logger.info(f"DB_NAME: {DB_NAME}")
+logger.info(f"DB_USER: {DB_USER}")
+logger.info(f"DB_PASSWORD: {DB_PASSWORD}")
+logger.info(f"DB_HOST: {DB_HOST}")
+logger.info(f"DB_PORT: {DB_PORT}")
 
 if DB_NAME and DB_USER and DB_PASSWORD:
     DATABASES = {
