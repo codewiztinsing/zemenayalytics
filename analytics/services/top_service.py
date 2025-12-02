@@ -40,7 +40,7 @@ class TopAnalyticsService:
 
 
     # ---------------------------------------------------------
-    # Unified TOP COUNTRIES + TOP BLOGS
+    # Unified TOP COUNTRIES + TOP BLOGS + TOP USERS
     # ---------------------------------------------------------
     @staticmethod
     def get_top_generic(
@@ -133,8 +133,6 @@ class TopAnalyticsService:
         """
         Entry point for top analytics.
         """
-        # For now we support unified handling via get_top_generic.
-        # If "user" is requested, treat it as "blog" (or adjust mapping as needed).
         if top == "user":
             return TopAnalyticsService.get_top_generic(top, filters, start, end, limit)
 
@@ -142,3 +140,63 @@ class TopAnalyticsService:
             return TopAnalyticsService.get_top_generic(top, filters, start, end, limit)
 
         raise ValueError(f"Invalid top analytics type: {top}")
+
+    # ------------------------------------------------------------------
+    # Backwards-compatible helpers used by existing unit tests
+    # ------------------------------------------------------------------
+    @staticmethod
+    def get_top_blogs(
+        filters: Dict[str, Any] | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """
+        Convenience wrapper kept for tests.
+        Delegates to get_top_generic with top_type='blog'.
+        """
+        return TopAnalyticsService.get_top_generic(
+            top_type="blog",
+            filters=filters,
+            start=start,
+            end=end,
+            limit=limit,
+        )
+
+    @staticmethod
+    def get_top_countries(
+        filters: Dict[str, Any] | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """
+        Convenience wrapper kept for tests.
+        Delegates to get_top_generic with top_type='country'.
+        """
+        return TopAnalyticsService.get_top_generic(
+            top_type="country",
+            filters=filters,
+            start=start,
+            end=end,
+            limit=limit,
+        )
+
+    @staticmethod
+    def get_top_users(
+        filters: Dict[str, Any] | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        """
+        Convenience wrapper kept for tests.
+        Delegates to get_top_generic with top_type='user'.
+        """
+        return TopAnalyticsService.get_top_generic(
+            top_type="user",
+            filters=filters,
+            start=start,
+            end=end,
+            limit=limit,
+        )

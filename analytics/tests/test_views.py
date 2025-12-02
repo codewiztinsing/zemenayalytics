@@ -41,7 +41,7 @@ class BlogViewsAnalyticsViewTest(TestCase):
 
     def test_blog_views_analytics_by_country(self):
         """Test blog views analytics endpoint with country grouping."""
-        url = "/api/v1/analytics/blog-views/?object_type=country"
+        url = "/analytics/blog-views/?object_type=country"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -50,7 +50,7 @@ class BlogViewsAnalyticsViewTest(TestCase):
 
     def test_blog_views_analytics_by_user(self):
         """Test blog views analytics endpoint with user grouping."""
-        url = "/api/v1/analytics/blog-views/?object_type=user"
+        url = "/analytics/blog-views/?object_type=user"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -64,7 +64,7 @@ class BlogViewsAnalyticsViewTest(TestCase):
                 "value": "US"
             }
         })
-        url = f"/api/v1/analytics/blog-views/?object_type=country&filters={quote(filters)}"
+        url = f"/analytics/blog-views/?object_type=country&filters={quote(filters)}"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -73,14 +73,14 @@ class BlogViewsAnalyticsViewTest(TestCase):
         """Test blog views analytics endpoint with date range."""
         start = (timezone.now() - timedelta(days=30)).date().isoformat()
         end = timezone.now().date().isoformat()
-        url = f"/api/v1/analytics/blog-views/?object_type=country&start={start}&end={end}"
+        url = f"/analytics/blog-views/?object_type=country&start={start}&end={end}"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_blog_views_analytics_invalid_data(self):
         """Test blog views analytics endpoint with invalid data."""
-        url = "/api/v1/analytics/blog-views/?object_type=invalid_type"
+        url = "/analytics/blog-views/?object_type=invalid_type"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -92,7 +92,7 @@ class BlogViewsAnalyticsViewTest(TestCase):
             "additionalProp1": "string",
             "additionalProp2": "string"
         })
-        url = f"/api/v1/analytics/blog-views/?object_type=country&filters={quote(filters)}"
+        url = f"/analytics/blog-views/?object_type=country&filters={quote(filters)}"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -103,7 +103,7 @@ class BlogViewsAnalyticsViewTest(TestCase):
         # Delete all views
         BlogView.objects.all().delete()
         
-        url = "/api/v1/analytics/blog-views/?object_type=country"
+        url = "/analytics/blog-views/?object_type=country"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -139,7 +139,7 @@ class TopAnalyticsViewTest(TestCase):
 
     def test_top_analytics_blogs(self):
         """Test top analytics endpoint for blogs."""
-        url = "/api/v1/analytics/top/?top=blog"
+        url = "/analytics/top/?top=blog"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -148,7 +148,7 @@ class TopAnalyticsViewTest(TestCase):
 
     def test_top_analytics_users(self):
         """Test top analytics endpoint for users."""
-        url = "/api/v1/analytics/top/?top=user"
+        url = "/analytics/top/?top=user"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -156,7 +156,7 @@ class TopAnalyticsViewTest(TestCase):
 
     def test_top_analytics_countries(self):
         """Test top analytics endpoint for countries."""
-        url = "/api/v1/analytics/top/?top=country"
+        url = "/analytics/top/?top=country"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -170,21 +170,21 @@ class TopAnalyticsViewTest(TestCase):
                 "value": "US"
             }
         })
-        url = f"/api/v1/analytics/top/?top=blog&filters={quote(filters)}"
+        url = f"/analytics/top/?top=blog&filters={quote(filters)}"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_top_analytics_invalid_type(self):
         """Test top analytics endpoint with invalid type."""
-        url = "/api/v1/analytics/top/?top=invalid"
+        url = "/analytics/top/?top=invalid"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_top_analytics_pagination(self):
         """Test that top analytics response is paginated."""
-        url = "/api/v1/analytics/top/?top=blog"
+        url = "/analytics/top/?top=blog"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -229,7 +229,7 @@ class PerformanceAnalyticsViewTest(TestCase):
 
     def test_performance_analytics_month(self):
         """Test performance analytics endpoint with month comparison."""
-        url = "/api/v1/analytics/performance/?compare=month"
+        url = "/analytics/performance/?compare=month"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -238,28 +238,28 @@ class PerformanceAnalyticsViewTest(TestCase):
 
     def test_performance_analytics_week(self):
         """Test performance analytics endpoint with week comparison."""
-        url = "/api/v1/analytics/performance/?compare=week"
+        url = "/analytics/performance/?compare=week"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_performance_analytics_day(self):
         """Test performance analytics endpoint with day comparison."""
-        url = "/api/v1/analytics/performance/?compare=day"
+        url = "/analytics/performance/?compare=day"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_performance_analytics_year(self):
         """Test performance analytics endpoint with year comparison."""
-        url = "/api/v1/analytics/performance/?compare=year"
+        url = "/analytics/performance/?compare=year"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_performance_analytics_with_user_id(self):
         """Test performance analytics endpoint with user filter."""
-        url = f"/api/v1/analytics/performance/?compare=month&user_id={self.user.id}"
+        url = f"/analytics/performance/?compare=month&user_id={self.user.id}"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -272,14 +272,14 @@ class PerformanceAnalyticsViewTest(TestCase):
                 "value": "US"
             }
         })
-        url = f"/api/v1/analytics/performance/?compare=month&filters={quote(filters)}"
+        url = f"/analytics/performance/?compare=month&filters={quote(filters)}"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_performance_analytics_invalid_compare(self):
         """Test performance analytics endpoint with invalid compare value."""
-        url = "/api/v1/analytics/performance/?compare=invalid"
+        url = "/analytics/performance/?compare=invalid"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -288,7 +288,7 @@ class PerformanceAnalyticsViewTest(TestCase):
 
     def test_performance_analytics_pagination(self):
         """Test that performance analytics response is paginated."""
-        url = "/api/v1/analytics/performance/?compare=day"
+        url = "/analytics/performance/?compare=day"
         response = self.client.get(url)
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
