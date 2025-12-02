@@ -1,7 +1,16 @@
 """
-Celery tasks for analytics app.
+Compat tasks package for the legacy ``apps.analytics.tasks`` path.
+
+Celery beat in existing environments may still refer to tasks using
+the old dotted path, e.g.::
+
+    apps.analytics.tasks.time_series_aggregation.aggregate_blog_views_hourly
+
+This package re-exports the new task implementations so those
+scheduled tasks keep working.
 """
-from .aggregation import (  # noqa: F401
+
+from .time_series_aggregation import (  # noqa: F401
     aggregate_blog_views_hourly,
     aggregate_blog_views_daily,
     aggregate_blog_views_weekly,
@@ -11,15 +20,6 @@ from .aggregation import (  # noqa: F401
     aggregate_blog_creations_monthly,
     aggregate_blog_creations_yearly,
 )
-
-# Import legacy shim so that alias task names like
-# 'apps.analytics.tasks.time_series_aggregation.aggregate_blog_views_hourly'
-# are registered whenever Celery autodiscovers 'analytics.tasks'.
-try:  # pragma: no cover - best-effort import
-    import apps.analytics.tasks.time_series_aggregation  # noqa: F401
-except Exception:
-    # If compat package is missing, just skip; new-style task names still work.
-    pass
 
 __all__ = [
     "aggregate_blog_views_hourly",
@@ -31,4 +31,5 @@ __all__ = [
     "aggregate_blog_creations_monthly",
     "aggregate_blog_creations_yearly",
 ]
+
 

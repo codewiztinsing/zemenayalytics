@@ -11,9 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 # Get SECRET_KEY from environment, with a fallback for development
 SECRET_KEY = get_secret(
-    "SECRET_KEY",
-    backup="django-insecure-dev-key-change-in-production-q+j44lxsbytpqrafkwq_gr(5d4fsc%ohiwff3%624gqvo=o2m1"
-)
+    "SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -307,3 +305,22 @@ CELERY_ENABLE_UTC = True
 
 # Celery Beat Configuration
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# Caching (Redis backend for analytics)
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": get_secret(
+            "REDIS_CACHE_URL",
+            backup="redis://redis:6379/1",
+        ),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    }
+}
+
+# Cache timeout (in seconds) for blog views analytics endpoint
+BLOG_VIEWS_ANALYTICS_CACHE_TIMEOUT = int(
+    get_secret("BLOG_VIEWS_ANALYTICS_CACHE_TIMEOUT", backup=300)
+)

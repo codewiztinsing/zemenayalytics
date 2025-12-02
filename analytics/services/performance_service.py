@@ -1,6 +1,9 @@
 """
 Service for Performance Analytics business logic using Time Series Aggregates.
 """
+
+from __future__ import annotations
+
 from typing import List, Dict, Any, Optional
 from django.db.models import Sum, QuerySet
 from datetime import datetime
@@ -17,48 +20,47 @@ from config.logger import logger
 class PerformanceAnalyticsService:
     """Service class for performance analytics using time series aggregates."""
 
+    # ----------------------------------------------------------------------
+    # Growth % calculation (clean and readable)
+    # ----------------------------------------------------------------------
     @staticmethod
-    def calculate_growth(current: int | float, previous: int | float | None) -> float | None:
+    def _growth(prev: float | int | None, curr: float | int) -> float | None:
         """
-        Backwards-compatible single-step growth calculator used by tests.
+        Compute growth percentage for a single step.
 
-        Rules (kept exactly as before refactor so tests still pass):
-            - previous is None          → None  (first period)
-            - previous == 0 and current > 0 → 100.0
-            - previous == 0 and current == 0 → None
-            - otherwise                 → ((current - previous) / previous) * 100
+        Rules:
+            - prev is None                → None
+            - prev == 0 and curr > 0      → 100.0
+            - prev == 0 and curr == 0     → None
+            - otherwise                   → ((curr - prev) / prev) * 100
         """
-        if previous is None:
+        if prev is None:
             return None
-        if previous == 0:
-            if current > 0:
-                return 100.0
-            return None
-        return ((current - previous) / previous) * 100.0
+        if prev == 0:
+            return 100.0 if curr > 0 else None
+        return ((curr - prev) / prev) * 100.0
 
     @staticmethod
     def _compute_growth_series(values: list[int | float]) -> list[float | None]:
         """
-        Compute growth percentages from a sequence of values.
-
-        Rules:
-            - First period → None
-            - previous > 0 → ((current - previous) / previous) * 100
-            - previous == 0 and current > 0 → 100
-            - previous == 0 and current == 0 → None
+        Compute growth percentages for an entire list of values,
+        using the cleaner wrapper `_growth`.
         """
-        growth: list[float | None] = []
-        prev: int | float | None = None
+        growth_list: list[float | None] = []
+        prev: float | int | None = None
 
-        for current in values:
-            growth.append(PerformanceAnalyticsService.calculate_growth(current, prev))
-            prev = current
+        for curr in values:
+            growth_list.append(PerformanceAnalyticsService._growth(prev, curr))
+            prev = curr
 
-        return growth
+        return growth_list
 
+    # ----------------------------------------------------------------------
+    # Helpers
+    # ----------------------------------------------------------------------
     @staticmethod
     def _parse_iso_date(date_str: str) -> datetime:
-        """Parse ISO date string with optional 'Z'."""
+        """Parse ISO date strings safely, including optional 'Z' UTC suffix."""
         try:
             return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
         except ValueError:
@@ -72,7 +74,11 @@ class PerformanceAnalyticsService:
         start: Optional[str] = None,
         end: Optional[str] = None,
     ) -> QuerySet:
-        """Apply dynamic filters, user filter, and date range to a queryset."""
+        """
+        Apply dynamic filters + author filter + date range.
+        """
+
+        # Dynamic filters
         if filters:
             if "blog" in filters:
                 qs = qs.filter(blog_id=safe_int(filters["blog"]))
@@ -81,9 +87,11 @@ class PerformanceAnalyticsService:
             if "author" in filters:
                 qs = qs.filter(author_id=safe_int(filters["author"]))
 
+        # Author filter
         if user_id is not None:
             qs = qs.filter(author_id=user_id)
 
+        # Time range filtering
         if start:
             qs = qs.filter(time_bucket__gte=PerformanceAnalyticsService._parse_iso_date(start))
         if end:
@@ -91,6 +99,9 @@ class PerformanceAnalyticsService:
 
         return qs
 
+    # ----------------------------------------------------------------------
+    # Main API
+    # ----------------------------------------------------------------------
     @staticmethod
     def get_performance_analytics(
         compare: str = "month",
@@ -100,14 +111,15 @@ class PerformanceAnalyticsService:
         end: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
-        Get performance analytics using time series aggregates.
+        Get performance analytics using time-series aggregate tables.
 
-        Returns a list of dictionaries with:
-            x → period label + blog count
+        Returns rows:
+            x → label (period + blog count)
             y → total views
             z → growth percentage
         """
-        # Map compare to granularity enum
+
+        # Supported granularities
         granularity_map = {
             "day": TimeSeriesGranularity.DAY,
             "week": TimeSeriesGranularity.WEEK,
@@ -116,11 +128,11 @@ class PerformanceAnalyticsService:
         }
 
         if compare not in granularity_map:
-            raise ValueError(f"Invalid compare value: {compare}. Must be one of {list(granularity_map.keys())}")
+            raise ValueError(f"Invalid compare '{compare}'. Choose from {list(granularity_map.keys())}")
 
         granularity = granularity_map[compare]
 
-        # Base querysets
+        # Base aggregated views queryset
         view_qs = BlogViewTimeSeriesAggregate.objects.filter(granularity=granularity)
         blog_qs = BlogCreationTimeSeriesAggregate.objects.filter(granularity=granularity)
 
@@ -128,36 +140,45 @@ class PerformanceAnalyticsService:
         view_qs = PerformanceAnalyticsService._apply_filters(view_qs, filters, user_id, start, end)
         blog_qs = PerformanceAnalyticsService._apply_filters(blog_qs, filters, user_id, start, end)
 
-        # Aggregate by time_bucket
+        # Aggregate view counts by time period
         view_data = (
             view_qs.values("time_bucket")
             .annotate(total_views=Sum("view_count"))
             .order_by("time_bucket")
         )
+
+        # Aggregate blog creation counts by time period
         blog_data = (
             blog_qs.values("time_bucket")
             .annotate(total_blogs=Sum("blog_count"))
             .order_by("time_bucket")
         )
 
-        # Map blog counts by time_bucket for quick lookup
-        blog_counts = {item["time_bucket"]: item["total_blogs"] for item in blog_data}
+        # Fast lookup dictionary
+        blog_counts = {
+            row["time_bucket"]: row["total_blogs"]
+            for row in blog_data
+        }
 
-        # Build rows
+        # Build result rows
         rows: List[Dict[str, Any]] = []
+
         for item in view_data:
-            time_bucket = item["time_bucket"]
+            bucket = item["time_bucket"]
             views = item["total_views"]
-            blog_count = blog_counts.get(time_bucket, 0)
-            period_label = time_bucket.strftime("%Y-%m-%d")
-            x_label = f"{period_label} ({blog_count} blogs)"
+            blog_count = blog_counts.get(bucket, 0)
+
+            # Format label
+            bucket_label = bucket.strftime("%Y-%m-%d")
+            x_label = f"{bucket_label} ({blog_count} blogs)"
+
             rows.append({"x": x_label, "y": views})
 
-        # Compute growth percentage series
-        views_series = [row["y"] for row in rows]
-        growth_series = PerformanceAnalyticsService._compute_growth_series(views_series)
+        # Growth calculation (clean new version)
+        values = [row["y"] for row in rows]
+        growth_values = PerformanceAnalyticsService._compute_growth_series(values)
 
-        for row, growth in zip(rows, growth_series):
+        for row, growth in zip(rows, growth_values):
             row["z"] = growth
 
         return rows

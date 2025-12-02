@@ -102,7 +102,7 @@ class BlogViewsAnalyticsService:
 
     # Public API
     @staticmethod
-    def get_analytics(
+    def  get_analytics(
         object_type: str,
         filters: Optional[Dict[str, Any]] = None,
         start: Optional[str] = None,
@@ -114,39 +114,4 @@ class BlogViewsAnalyticsService:
         """
         return BlogViewsAnalyticsService._get_analytics_generic(object_type, filters, start, end)
 
-    # ------------------------------------------------------------------
-    # Backwards-compatible helpers used by existing unit tests
-    # ------------------------------------------------------------------
-    @staticmethod
-    def get_analytics_by_country(
-        filters: Optional[Dict[str, Any]] = None,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
-        """
-        Convenience wrapper kept for tests.
-        Delegates to the main get_analytics API with object_type='country'.
-        """
-        return BlogViewsAnalyticsService.get_analytics(
-            object_type="country",
-            filters=filters,
-            start=start,
-            end=end,
-        )
-
-    @staticmethod
-    def get_analytics_by_user(
-        filters: Optional[Dict[str, Any]] = None,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
-        """
-        Convenience wrapper kept for tests.
-        Delegates to the main get_analytics API with object_type='user'.
-        """
-        return BlogViewsAnalyticsService.get_analytics(
-            object_type="user",
-            filters=filters,
-            start=start,
-            end=end,
-        )
+   

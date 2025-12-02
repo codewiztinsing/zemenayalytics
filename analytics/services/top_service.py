@@ -2,7 +2,7 @@
 Service for Top Analytics business logic.
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Callable
 from django.db.models import Count, F, QuerySet
 from analytics.models import BlogView
 from analytics.utils.filters import build_q_from_filter
@@ -12,18 +12,15 @@ from analytics.utils.helpers import parse_timerange
 class TopAnalyticsService:
     """Service class for top analytics business logic."""
 
-    # ---------------------------------------------------------
-    # Internal Helper → prepares queryset for all top analytics
-    # ---------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # WRAPPER: Build Base QuerySet (filters + datetime + select_related)
+    # -------------------------------------------------------------------------
     @staticmethod
-    def _prepare_queryset(
+    def _base_queryset(
         filters: Dict[str, Any] | None,
         start: str | None,
         end: str | None,
     ) -> QuerySet:
-        """
-        Returns the base queryset with filters + date range applied.
-        """
         qs = BlogView.objects.select_related(
             "blog",
             "blog__author",
@@ -34,34 +31,14 @@ class TopAnalyticsService:
         if filters:
             qs = qs.filter(build_q_from_filter(filters))
 
-        # filter on BlogView.viewed_at using parse_timerange.
         qs = parse_timerange(qs, start, end, datetime_field="viewed_at")
         return qs
 
-
-    # ---------------------------------------------------------
-    # Unified TOP COUNTRIES + TOP BLOGS + TOP USERS
-    # ---------------------------------------------------------
+    # -------------------------------------------------------------------------
+    # WRAPPER: Config resolver for country/blog/user
+    # -------------------------------------------------------------------------
     @staticmethod
-    def get_top_generic(
-        top_type: str,
-        filters: Dict[str, Any] | None = None,
-        start: str | None = None,
-        end: str | None = None,
-        limit: int = 10,
-    ) -> List[Dict[str, Any]]:
-        """
-        Unified handler for 'country' and 'blog' top analytics.
-
-        Returns list of:
-            x → label (country name / blog title)
-            y → secondary metric (blogs_count OR blog_id)
-            z → total views
-        """
-
-        qs = TopAnalyticsService._prepare_queryset(filters, start, end)
-
-        # Configuration mapping
+    def _get_config(top_type: str) -> Dict[str, Any]:
         config = {
             "country": {
                 "values": {
@@ -99,29 +76,64 @@ class TopAnalyticsService:
         if top_type not in config:
             raise ValueError(f"Invalid top_type: {top_type}")
 
-        cfg = config[top_type]
+        return config[top_type]
 
-        qs = (
-            qs.values(**cfg["values"])
-            .annotate(**cfg["annotate"])
+    # -------------------------------------------------------------------------
+    # WRAPPER: Execute aggregation queryset
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def _aggregate(
+        qs: QuerySet,
+        values: Dict[str, Any],
+        annotate: Dict[str, Any],
+        limit: int,
+    ) -> QuerySet:
+        return (
+            qs.values(**values)
+            .annotate(**annotate)
             .order_by("-z")[:limit]
         )
 
-        results = []
-        for r in qs:
-            results.append(
-                {
-                    "x": cfg["resolve_x"](r),
-                    "y": r.get("y"),
-                    "z": r["z"],
-                }
-            )
+    # -------------------------------------------------------------------------
+    # WRAPPER: Serialize one row
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def _serialize_row(row: Dict[str, Any], resolve_x: Callable) -> Dict[str, Any]:
+        return {
+            "x": resolve_x(row),
+            "y": row.get("y"),
+            "z": row["z"],
+        }
 
-        return results
+    # -------------------------------------------------------------------------
+    # UNIFIED HANDLER
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def get_top_generic(
+        top_type: str,
+        filters: Dict[str, Any] | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        limit: int = 10,
+    ) -> List[Dict[str, Any]]:
+        qs = TopAnalyticsService._base_queryset(filters, start, end)
+        cfg = TopAnalyticsService._get_config(top_type)
 
-    # ---------------------------------------------------------
-    # Main Router
-    # ---------------------------------------------------------
+        agg_qs = TopAnalyticsService._aggregate(
+            qs,
+            values=cfg["values"],
+            annotate=cfg["annotate"],
+            limit=limit,
+        )
+
+        return [
+            TopAnalyticsService._serialize_row(row, cfg["resolve_x"])
+            for row in agg_qs
+        ]
+
+    # -------------------------------------------------------------------------
+    # ROUTER
+    # -------------------------------------------------------------------------
     @staticmethod
     def get_top_analytics(
         top: str,
@@ -130,73 +142,13 @@ class TopAnalyticsService:
         end: str | None = None,
         limit: int = 10,
     ) -> List[Dict[str, Any]]:
-        """
-        Entry point for top analytics.
-        """
-        if top == "user":
-            return TopAnalyticsService.get_top_generic(top, filters, start, end, limit)
-
-        if top in ("country", "blog"):
-            return TopAnalyticsService.get_top_generic(top, filters, start, end, limit)
+        if top in ("country", "blog", "user"):
+            return TopAnalyticsService.get_top_generic(
+                top_type=top,
+                filters=filters,
+                start=start,
+                end=end,
+                limit=limit,
+            )
 
         raise ValueError(f"Invalid top analytics type: {top}")
-
-    # ------------------------------------------------------------------
-    # Backwards-compatible helpers used by existing unit tests
-    # ------------------------------------------------------------------
-    @staticmethod
-    def get_top_blogs(
-        filters: Dict[str, Any] | None = None,
-        start: str | None = None,
-        end: str | None = None,
-        limit: int = 10,
-    ) -> List[Dict[str, Any]]:
-        """
-        Convenience wrapper kept for tests.
-        Delegates to get_top_generic with top_type='blog'.
-        """
-        return TopAnalyticsService.get_top_generic(
-            top_type="blog",
-            filters=filters,
-            start=start,
-            end=end,
-            limit=limit,
-        )
-
-    @staticmethod
-    def get_top_countries(
-        filters: Dict[str, Any] | None = None,
-        start: str | None = None,
-        end: str | None = None,
-        limit: int = 10,
-    ) -> List[Dict[str, Any]]:
-        """
-        Convenience wrapper kept for tests.
-        Delegates to get_top_generic with top_type='country'.
-        """
-        return TopAnalyticsService.get_top_generic(
-            top_type="country",
-            filters=filters,
-            start=start,
-            end=end,
-            limit=limit,
-        )
-
-    @staticmethod
-    def get_top_users(
-        filters: Dict[str, Any] | None = None,
-        start: str | None = None,
-        end: str | None = None,
-        limit: int = 10,
-    ) -> List[Dict[str, Any]]:
-        """
-        Convenience wrapper kept for tests.
-        Delegates to get_top_generic with top_type='user'.
-        """
-        return TopAnalyticsService.get_top_generic(
-            top_type="user",
-            filters=filters,
-            start=start,
-            end=end,
-            limit=limit,
-        )

@@ -1,8 +1,9 @@
 import os
+import pathlib
 from environ import Env
 from config.logger import logger
 # Build paths inside the project
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
 
 # Initialize environ.Env
 env = Env(
@@ -29,6 +30,7 @@ def get_secret(secret_id, backup=None):
     try:
         # Try to get the value from environment
         value = env(secret_id, default=backup)
+        logger.info(f"Secret {secret_id} retrieved: {value}")
         return value
     except Exception as e:
         # If there's an error, return backup or None
@@ -37,7 +39,7 @@ def get_secret(secret_id, backup=None):
 
 # Determine which settings to load based on PIPELINE environment variable
 PIPELINE = get_secret("PIPELINE", "local")
-logger.info(f"PIPELINE: {PIPELINE}")
+print("PIPELINE", PIPELINE)
 
 if PIPELINE == "production":
     from .production import *
