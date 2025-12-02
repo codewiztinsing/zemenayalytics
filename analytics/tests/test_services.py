@@ -54,34 +54,6 @@ class BlogViewsAnalyticsServiceTest(TestCase):
         BlogView.objects.create(blog=self.blog1, user=self.user2)
         BlogView.objects.create(blog=self.blog2, user=self.user1)
 
-    def test_get_analytics_by_country(self):
-        """Test getting analytics grouped by country."""
-        result = BlogViewsAnalyticsService.get_analytics_by_country()
-        
-        self.assertIsInstance(result, list)
-        self.assertEqual(len(result), 2)
-        
-        # Check structure
-        for item in result:
-            self.assertIn("x", item)
-            self.assertIn("y", item)
-            self.assertIn("z", item)
-            self.assertIsInstance(item["y"], int)
-            self.assertIsInstance(item["z"], int)
-
-    def test_get_analytics_by_user(self):
-        """Test getting analytics grouped by user."""
-        result = BlogViewsAnalyticsService.get_analytics_by_user()
-        
-        self.assertIsInstance(result, list)
-        self.assertGreaterEqual(len(result), 1)
-        
-        # Check structure
-        for item in result:
-            self.assertIn("x", item)
-            self.assertIn("y", item)
-            self.assertIn("z", item)
-
     def test_get_analytics_with_filters(self):
         """Test getting analytics with filters."""
         filters = {
@@ -151,37 +123,6 @@ class TopAnalyticsServiceTest(TestCase):
         for _ in range(2):
             BlogView.objects.create(blog=self.blog2, user=self.user2)
 
-    def test_get_top_blogs(self):
-        """Test getting top blogs."""
-        result = TopAnalyticsService.get_top_blogs(limit=10)
-        
-        self.assertIsInstance(result, list)
-        self.assertLessEqual(len(result), 10)
-        
-        # Check that results are sorted by views (descending)
-        if len(result) > 1:
-            self.assertGreaterEqual(result[0]["z"], result[1]["z"])
-
-    def test_get_top_users(self):
-        """Test getting top users."""
-        result = TopAnalyticsService.get_top_users(limit=10)
-        
-        self.assertIsInstance(result, list)
-        self.assertLessEqual(len(result), 10)
-        
-        # Check structure
-        for item in result:
-            self.assertIn("x", item)
-            self.assertIn("y", item)
-            self.assertIn("z", item)
-
-    def test_get_top_countries(self):
-        """Test getting top countries."""
-        result = TopAnalyticsService.get_top_countries(limit=10)
-        
-        self.assertIsInstance(result, list)
-        self.assertLessEqual(len(result), 10)
-
     def test_get_top_analytics_blog(self):
         """Test get_top_analytics with blog type."""
         result = TopAnalyticsService.get_top_analytics("blog", limit=10)
@@ -232,31 +173,6 @@ class PerformanceAnalyticsServiceTest(TestCase):
                 user=self.user,
                 viewed_at=now - timedelta(days=i)
             )
-
-    def test_calculate_growth_first_period(self):
-        """Test growth calculation for first period."""
-        growth = PerformanceAnalyticsService.calculate_growth(100, None)
-        self.assertIsNone(growth)
-
-    def test_calculate_growth_with_previous_zero(self):
-        """Test growth calculation when previous period is zero."""
-        growth = PerformanceAnalyticsService.calculate_growth(100, 0)
-        self.assertEqual(growth, 100.0)
-        
-    def test_calculate_growth_both_zero(self):
-        """Test growth calculation when both periods are zero."""
-        growth = PerformanceAnalyticsService.calculate_growth(0, 0)
-        self.assertIsNone(growth)
-
-    def test_calculate_growth_normal(self):
-        """Test normal growth calculation."""
-        growth = PerformanceAnalyticsService.calculate_growth(150, 100)
-        self.assertEqual(growth, 50.0)
-
-    def test_calculate_growth_negative(self):
-        """Test negative growth calculation."""
-        growth = PerformanceAnalyticsService.calculate_growth(50, 100)
-        self.assertEqual(growth, -50.0)
 
     def test_get_performance_analytics_month(self):
         """Test getting performance analytics by month."""

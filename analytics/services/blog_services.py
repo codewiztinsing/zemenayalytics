@@ -102,7 +102,7 @@ class BlogViewsAnalyticsService:
 
     # Public API
     @staticmethod
-    def  get_analytics(
+    def get_analytics(
         object_type: str,
         filters: Optional[Dict[str, Any]] = None,
         start: Optional[str] = None,
@@ -113,5 +113,22 @@ class BlogViewsAnalyticsService:
         object_type: "user" | "country"
         """
         return BlogViewsAnalyticsService._get_analytics_generic(object_type, filters, start, end)
+
+    # Backwards‑compatible wrappers for older tests/callers
+    @staticmethod
+    def get_analytics_by_country(
+        filters: Optional[Dict[str, Any]] = None,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        return BlogViewsAnalyticsService._get_analytics_generic("country", filters, start, end)
+
+    @staticmethod
+    def get_analytics_by_user(
+        filters: Optional[Dict[str, Any]] = None,
+        start: Optional[str] = None,
+        end: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        return BlogViewsAnalyticsService._get_analytics_generic("user", filters, start, end)
 
    

@@ -121,10 +121,6 @@ class TopAnalyticsService:
         cfg = TopAnalyticsService._get_config(top_type)
         
 
-        logger.info(f"Base queryset: {qs.query}")
-        logger.info(f"Config: {cfg}")
-
-
         agg_qs = TopAnalyticsService._aggregate(
             qs,
             values=cfg["values"],
@@ -156,3 +152,5 @@ class TopAnalyticsService:
             )
 
         raise ValueError(f"Invalid top analytics type: {top}")
+
+  

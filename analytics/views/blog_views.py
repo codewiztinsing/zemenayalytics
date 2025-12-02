@@ -70,12 +70,16 @@ class BlogViewsAnalyticsView(SwaggerMixin, APIView):
         """
         logger.info(f"Blog views analytics request received from {request.META.get('REMOTE_ADDR', 'unknown')}")
 
+        # Decide if we should use cache (disabled in tests by default)
+        use_cache = getattr(settings, "USE_REDIS_CACHE", True) and not getattr(settings, "IS_TESTING", False)
+
         # Build a cache key based on full request path + query string
         cache_key = f"blog_views_analytics:{request.get_full_path()}"
-        cached_payload = cache.get(cache_key)
-        if cached_payload is not None:
-            logger.debug("Returning cached response for BlogViewsAnalyticsView")
-            return Response(cached_payload, status=status.HTTP_200_OK)
+        if use_cache:
+            cached_payload = cache.get(cache_key)
+            if cached_payload is not None:
+                logger.debug("Returning cached response for BlogViewsAnalyticsView")
+                return Response(cached_payload, status=status.HTTP_200_OK)
 
         # Parse query parameters using helper function
         data = parse_query_params(request.query_params)
@@ -101,7 +105,6 @@ class BlogViewsAnalyticsView(SwaggerMixin, APIView):
                 start=start,
                 end=end,
             )
-            cache.set(cache_key, result, timeout=300)
             logger.info(f"Successfully retrieved {len(result)} analytics records")
         except ValueError as e:
             logger.error(f"Invalid filter format: {str(e)}")
@@ -122,11 +125,13 @@ class BlogViewsAnalyticsView(SwaggerMixin, APIView):
         response_serializer = BlogViewsAnalyticsResponseSerializer(paginated_result, many=True)
         response = paginator.get_paginated_response(response_serializer.data)
 
-        # Cache the final paginated payload
-        cache_timeout = getattr(settings, "BLOG_VIEWS_ANALYTICS_CACHE_TIMEOUT", 300)
-        cache.set(cache_key, response.data, timeout=cache_timeout)
-
-        logger.debug(f"Returning paginated response with {len(paginated_result)} items (cached for {cache_timeout}s)")
+        # Cache the final paginated payload (only when cache is enabled)
+        if use_cache:
+            cache_timeout = getattr(settings, "BLOG_VIEWS_ANALYTICS_CACHE_TIMEOUT", 300)
+            cache.set(cache_key, response.data, timeout=cache_timeout)
+            logger.debug(f"Returning paginated response with {len(paginated_result)} items (cached for {cache_timeout}s)")
+        else:
+            logger.debug(f"Returning paginated response with {len(paginated_result)} items (cache disabled)")
         return response
 
 

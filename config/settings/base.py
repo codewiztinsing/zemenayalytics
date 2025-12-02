@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 from config.settings import get_secret
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -306,19 +307,34 @@ CELERY_ENABLE_UTC = True
 # Celery Beat Configuration
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
-# Caching (Redis backend for analytics)
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": get_secret(
-            "REDIS_CACHE_URL",
-            backup="redis://redis:6379/1",
-        ),
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
+# Caching
+# By default we use Redis, but this can be disabled (e.g. for tests) via USE_REDIS_CACHE.
+# When running under pytest, default to *not* using Redis unless explicitly enabled.
+IS_TESTING = any("pytest" in arg for arg in sys.argv)
+default_cache_flag = "false" if IS_TESTING else "true"
+USE_REDIS_CACHE = str(get_secret("USE_REDIS_CACHE", default_cache_flag)).lower() in {"1", "true", "yes"}
+
+if USE_REDIS_CACHE:
+    CACHES = {
+        "default": {
+            "BACKEND": "django_redis.cache.RedisCache",
+            "LOCATION": get_secret(
+                "REDIS_CACHE_URL",
+                backup="redis://redis:6379/1",
+            ),
+            "OPTIONS": {
+                "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            },
+        }
     }
-}
+else:
+    # Local in‑memory cache (no external Redis required)
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "analytics-local",
+        }
+    }
 
 # Cache timeout (in seconds) for blog views analytics endpoint
 BLOG_VIEWS_ANALYTICS_CACHE_TIMEOUT = int(

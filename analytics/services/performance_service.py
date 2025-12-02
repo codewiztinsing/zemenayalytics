@@ -50,6 +50,12 @@ class PerformanceAnalyticsService:
             return 100.0 if curr > 0 else None
         return ((curr - prev) / prev) * 100.0
 
+    # Backwards‑compatible public helper expected by tests
+    @staticmethod
+    def calculate_growth(current: float | int | None, previous: float | int | None) -> float | None:
+
+        return PerformanceAnalyticsService._growth(previous, current if current is not None else 0)
+
     @staticmethod
     def _compute_growth_series(values: list[int | float]) -> list[float | None]:
         """
