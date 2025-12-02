@@ -19,6 +19,34 @@ class PerformanceAnalyticsService:
     """Service class for performance analytics business logic using time series aggregates."""
 
     @staticmethod
+    def _compute_growth_series(values: list[int | float]) -> list[float | None]:
+        """
+        Given a sequence of values (e.g. views per period), compute growth percentages.
+
+        Rules:
+            - First period has no previous value → growth is None
+            - previous > 0 → ((current - previous) / previous) * 100
+            - previous == 0 and current > 0 → 100.0
+            - previous == 0 and current == 0 → None
+        """
+        growth: list[float | None] = []
+        prev: int | float | None = None
+
+        for current in values:
+            if prev is None:
+                growth.append(None)
+            elif prev > 0:
+                growth.append(((current - prev) / prev) * 100)
+            elif prev == 0 and current > 0:
+                growth.append(100.0)
+            else:
+                growth.append(None)
+
+            prev = current
+
+        return growth
+
+    @staticmethod
     def get_performance_analytics(
         compare: str = "month",
         filters: Dict[str, Any] | None = None,
@@ -110,33 +138,30 @@ class PerformanceAnalyticsService:
         # Create a dictionary for quick lookup
         blog_counts = {item["time_bucket"]: item["total_blogs"] for item in blog_data}
         
-        # Build result with growth calculation
-        result = []
-        previous_views = None
-        
+        # First build rows with period label and views
+        rows: list[Dict[str, Any]] = []
         for item in view_data:
             time_bucket = item["time_bucket"]
             views = item["total_views"]
             blog_count = blog_counts.get(time_bucket, 0)
-            
-            # Calculate growth percentage
-            growth_pct = None
-            if previous_views is not None and previous_views > 0:
-                growth_pct = ((views - previous_views) / previous_views) * 100
-            elif previous_views == 0 and views > 0:
-                growth_pct = 100.0
-            
-            # Format period label
+
             period_label = time_bucket.strftime("%Y-%m-%d")
             x_label = f"{period_label} ({blog_count} blogs)"
-            
-            result.append({
-                "x": x_label,
-                "y": views,
-                "z": growth_pct,
-            })
-            
-            previous_views = views
-        
-        return result
+
+            rows.append(
+                {
+                    "x": x_label,
+                    "y": views,
+                    # z (growth) will be filled in a separate pass for clarity
+                }
+            )
+
+        # Compute growth percentages in a dedicated helper for readability
+        views_series = [row["y"] for row in rows]
+        growth_series = PerformanceAnalyticsService._compute_growth_series(views_series)
+
+        for row, growth in zip(rows, growth_series):
+            row["z"] = growth
+
+        return rows
 

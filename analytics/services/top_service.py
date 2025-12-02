@@ -1,8 +1,9 @@
 """
 Service for Top Analytics business logic.
 """
+
 from typing import List, Dict, Any
-from django.db.models import Count, F
+from django.db.models import Count, F, QuerySet
 from analytics.models import BlogView
 from analytics.utils.filters import build_q_from_filter
 from analytics.utils.helpers import parse_timerange
@@ -11,128 +12,116 @@ from analytics.utils.helpers import parse_timerange
 class TopAnalyticsService:
     """Service class for top analytics business logic."""
 
+    # ---------------------------------------------------------
+    # Internal Helper → prepares queryset for all top analytics
+    # ---------------------------------------------------------
     @staticmethod
-    def get_top_users(
+    def _prepare_queryset(
+        filters: Dict[str, Any] | None,
+        start: str | None,
+        end: str | None,
+    ) -> QuerySet:
+        """
+        Returns the base queryset with filters + date range applied.
+        """
+        qs = BlogView.objects.select_related(
+            "blog",
+            "blog__author",
+            "blog__country",
+            "blog__author__user",
+        )
+
+        if filters:
+            qs = qs.filter(build_q_from_filter(filters))
+
+        # filter on BlogView.viewed_at using parse_timerange.
+        qs = parse_timerange(qs, start, end, datetime_field="viewed_at")
+        return qs
+
+
+    # ---------------------------------------------------------
+    # Unified TOP COUNTRIES + TOP BLOGS
+    # ---------------------------------------------------------
+    @staticmethod
+    def get_top_generic(
+        top_type: str,
         filters: Dict[str, Any] | None = None,
         start: str | None = None,
         end: str | None = None,
         limit: int = 10,
     ) -> List[Dict[str, Any]]:
         """
-        Get top users by total views.
-        
-        Args:
-            filters: Dynamic filter tree
-            start: Start date in ISO format
-            end: End date in ISO format
-            limit: Number of top results to return
-        
-        Returns:
-            List of dictionaries with x (user name), y (blogs count), z (total views)
-        """
-        view_qs = BlogView.objects.select_related("blog__author", "blog__country")
+        Unified handler for 'country' and 'blog' top analytics.
 
-        if filters:
-            view_qs = view_qs.filter(build_q_from_filter(filters))
-        # Apply time range based on created_at (from BaseModel)
-        view_qs = parse_timerange(view_qs, start, end, datetime_field="created_at")
+        Returns list of:
+            x → label (country name / blog title)
+            y → secondary metric (blogs_count OR blog_id)
+            z → total views
+        """
+
+        qs = TopAnalyticsService._prepare_queryset(filters, start, end)
+
+        # Configuration mapping
+        config = {
+            "country": {
+                "values": {
+                    "x_code": F("blog__country__code"),
+                    "x_name": F("blog__country__name"),
+                },
+                "annotate": {
+                    "z": Count("id"),
+                    "y": Count("blog_id", distinct=True),
+                },
+                "resolve_x": lambda r: r["x_name"] or r["x_code"],
+            },
+            "blog": {
+                "values": {
+                    "x": F("blog__title"),
+                    "y": F("blog__id"),
+                },
+                "annotate": {
+                    "z": Count("id"),
+                },
+                "resolve_x": lambda r: r["x"],
+            },
+            "user": {
+                "values": {
+                    "x_username": F("blog__author__user__username"),
+                    "y": F("blog__author__user__id"),
+                },
+                "annotate": {
+                    "z": Count("id"),
+                },
+                "resolve_x": lambda r: r["x_username"],
+            },
+        }
+
+        if top_type not in config:
+            raise ValueError(f"Invalid top_type: {top_type}")
+
+        cfg = config[top_type]
 
         qs = (
-            view_qs
-            .values(
-                author_id=F("blog__author__id"),
-                author_username=F("blog__author__user__username"),
+            qs.values(**cfg["values"])
+            .annotate(**cfg["annotate"])
+            .order_by("-z")[:limit]
+        )
+
+        results = []
+        for r in qs:
+            results.append(
+                {
+                    "x": cfg["resolve_x"](r),
+                    "y": r.get("y"),
+                    "z": r["z"],
+                }
             )
-            .annotate(total_views=Count("id"), blogs_count=Count("blog_id", distinct=True))
-            .order_by("-total_views")[:limit]
-        )
 
-        result = [
-            {"x": r["author_username"], "y": r["blogs_count"], "z": r["total_views"]}
-            for r in qs
-        ]
+        return results
 
-        return result
-
-    @staticmethod
-    def get_top_countries(
-        filters: Dict[str, Any] | None = None,
-        start: str | None = None,
-        end: str | None = None,
-        limit: int = 10,
-    ) -> List[Dict[str, Any]]:
-        """
-        Get top countries by total views.
-        
-        Args:
-            filters: Dynamic filter tree
-            start: Start date in ISO format
-            end: End date in ISO format
-            limit: Number of top results to return
-        
-        Returns:
-            List of dictionaries with x (country name), y (blogs count), z (total views)
-        """
-        view_qs = BlogView.objects.select_related("blog__author", "blog__country")
-
-        if filters:
-            view_qs = view_qs.filter(build_q_from_filter(filters))
-        # Apply time range based on created_at (from BaseModel)
-        view_qs = parse_timerange(view_qs, start, end, datetime_field="created_at")
-
-        qs = (
-            view_qs
-            .values(country_code=F("blog__country__code"), country_name=F("blog__country__name"))
-            .annotate(total_views=Count("id"), blogs_count=Count("blog_id", distinct=True))
-            .order_by("-total_views")[:limit]
-        )
-
-        result = [
-            {"x": r["country_name"] or r["country_code"], "y": r["blogs_count"], "z": r["total_views"]}
-            for r in qs
-        ]
-
-        return result
-
-    @staticmethod
-    def get_top_blogs(
-        filters: Dict[str, Any] | None = None,
-        start: str | None = None,
-        end: str | None = None,
-        limit: int = 10,
-    ) -> List[Dict[str, Any]]:
-        """
-        Get top blogs by total views.
-        
-        Args:
-            filters: Dynamic filter tree
-            start: Start date in ISO format
-            end: End date in ISO format
-            limit: Number of top results to return
-        
-        Returns:
-            List of dictionaries with x (blog title), y (blog id), z (total views)
-        """
-        view_qs = BlogView.objects.select_related("blog__author", "blog__country")
-
-        if filters:
-            view_qs = view_qs.filter(build_q_from_filter(filters))
-        # Apply time range based on created_at (from BaseModel)
-        view_qs = parse_timerange(view_qs, start, end, datetime_field="created_at")
-
-        qs = (
-            view_qs
-            .values(blog_id_val=F("blog__id"), blog_title=F("blog__title"))
-            .annotate(total_views=Count("id"))
-            .order_by("-total_views")[:limit]
-        )
-
-        result = [
-            {"x": r["blog_title"], "y": r["blog_id_val"], "z": r["total_views"]} for r in qs
-        ]
-
-        return result
-
+    # ---------------------------------------------------------
+    # Main Router
+    # ---------------------------------------------------------
     @staticmethod
     def get_top_analytics(
         top: str,
@@ -142,22 +131,14 @@ class TopAnalyticsService:
         limit: int = 10,
     ) -> List[Dict[str, Any]]:
         """
-        Get top analytics by type.
-        
-        Args:
-            top: 'user', 'country', or 'blog'
-            filters: Dynamic filter tree
-            start: Start date in ISO format
-            end: End date in ISO format
-            limit: Number of top results to return
-        
-        Returns:
-            List of dictionaries with top analytics data
+        Entry point for top analytics.
         """
+        # For now we support unified handling via get_top_generic.
+        # If "user" is requested, treat it as "blog" (or adjust mapping as needed).
         if top == "user":
-            return TopAnalyticsService.get_top_users(filters, start, end, limit)
-        elif top == "country":
-            return TopAnalyticsService.get_top_countries(filters, start, end, limit)
-        else:
-            return TopAnalyticsService.get_top_blogs(filters, start, end, limit)
+            return TopAnalyticsService.get_top_generic(top, filters, start, end, limit)
 
+        if top in ("country", "blog"):
+            return TopAnalyticsService.get_top_generic(top, filters, start, end, limit)
+
+        raise ValueError(f"Invalid top analytics type: {top}")

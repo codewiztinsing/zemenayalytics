@@ -12,20 +12,14 @@ class BlogViewsAnalyticsRequestSerializer(DateRangeSerializer, FilterSerializer)
         default="country",
         help_text="Group by country or user"
     )
-    range = serializers.ChoiceField(
-        choices=["month", "week", "year", "day"],
-        required=False,
-        allow_null=True,
-        help_text="Time range for aggregation (optional)"
-    )
 
     class Meta:
-        fields = ["object_type", "range", "filters", "start", "end"]
+        fields = ["object_type", "filters", "start", "end"]
 
 
 class BlogViewsAnalyticsResponseSerializer(serializers.Serializer):
     """Response serializer for blog views analytics."""
-    x = serializers.CharField(help_text="Grouping key (country name or user)")
+    x = serializers.CharField(help_text="Grouping key with time period (e.g., 'Ethiopia - 2024-01' or 'username (id) - 2024-01')")
     y = serializers.IntegerField(help_text="Number of distinct blogs")
     z = serializers.IntegerField(help_text="Total views")
 

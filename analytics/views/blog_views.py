@@ -3,15 +3,20 @@ Blog Views Analytics View
 
 Endpoint: /analytics/blog-views/
 - object_type: 'country' | 'user'
-- range: 'month'|'week'|'year'|'day'
+- start/end: Date range (ISO format: YYYY-MM-DD)
 - filters: JSON filter object (dynamic filters)
+- Time granularity is automatically determined from date range:
+  * 1-7 days: day
+  * 8-30 days: week
+  * 31-365 days: month
+  * >365 days: year
 Response:
   [
-    { "x": "<grouping key>", "y": number_of_blogs, "z": total_views },
+    { "x": "<grouping key> - <time period>", "y": number_of_blogs, "z": total_views },
     ...
   ]
 Aggregation:
-  group blogs (distinct blog count) and total views per grouping key.
+  Group blogs (distinct blog count) and total views per grouping key AND time period.
 """
 from rest_framework.views import APIView
 from rest_framework.request import Request
@@ -39,8 +44,9 @@ class BlogViewsAnalyticsView(SwaggerMixin, APIView):
     swagger_operation_id = "blog_views_analytics"
     swagger_summary = "Get blog views analytics"
     swagger_description = """
-    Get analytics for blog views grouped by country or user.
-    Returns aggregated data with number of blogs and total views per grouping key.
+    Get analytics for blog views grouped by country or user and time period.
+    Time granularity (day/week/month/year) is automatically determined from the date range.
+    Returns aggregated data with number of blogs and total views per grouping key and time period.
     """
     swagger_request_serializer = BlogViewsAnalyticsRequestSerializer
     swagger_response_serializer = BlogViewsAnalyticsResponseSerializer
@@ -52,12 +58,6 @@ class BlogViewsAnalyticsView(SwaggerMixin, APIView):
                 name="object_type",
                 description="The type of object to group by",
                 enum_values=["country", "user"],
-                required=False,
-            ),
-            create_enum_parameter(
-                name="range",
-                description="The range of the analytics",
-                enum_values=["month", "week", "year", "day"],
                 required=False,
             ),
         ]
