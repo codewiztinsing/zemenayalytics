@@ -7,6 +7,8 @@ from __future__ import annotations
 from typing import List, Dict, Any, Optional
 from django.db.models import Sum, QuerySet
 from datetime import datetime
+from django.db.models import Model
+
 
 from analytics.models.aggregation import (
     BlogViewTimeSeriesAggregate,
@@ -21,8 +23,16 @@ class PerformanceAnalyticsService:
     """Service class for performance analytics using time series aggregates."""
 
     # ----------------------------------------------------------------------
-    # Growth % calculation (clean and readable)
+    # Growth % calculation 
     # ----------------------------------------------------------------------
+
+
+    @staticmethod
+    def _base_queryset(model: Model, granularity: str) -> QuerySet:
+        qs = model.objects.filter(granularity=granularity).select_related("blog", "author", "country")
+        return qs
+
+
     @staticmethod
     def _growth(prev: float | int | None, curr: float | int) -> float | None:
         """
@@ -43,8 +53,7 @@ class PerformanceAnalyticsService:
     @staticmethod
     def _compute_growth_series(values: list[int | float]) -> list[float | None]:
         """
-        Compute growth percentages for an entire list of values,
-        using the cleaner wrapper `_growth`.
+        Compute growth percentages for an entire list of values.
         """
         growth_list: list[float | None] = []
         prev: float | int | None = None
@@ -65,6 +74,32 @@ class PerformanceAnalyticsService:
             return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
         except ValueError:
             raise ValueError(f"Invalid ISO date: {date_str}")
+
+
+    @staticmethod
+    def _build_result_rows(view_data: QuerySet, blog_counts: Dict[datetime, int]) -> List[Dict[str, Any]]:
+        rows: List[Dict[str, Any]] = []
+        for item in view_data:
+            bucket = item["time_bucket"]
+            views = item["total_views"]
+            blog_count = blog_counts.get(bucket, 0)
+
+            # Format label
+            bucket_label = bucket.strftime("%Y-%m-%d")
+            x_label = f"{bucket_label} ({blog_count} blogs)"
+
+            rows.append({"x": x_label, "y": views})
+
+        # Growth calculation (clean new version)
+        values = [row["y"] for row in rows]
+        growth_values = PerformanceAnalyticsService._compute_growth_series(values)
+
+        if growth_values:
+            growth_values[0] = 0.0
+
+        for row, growth in zip(rows, growth_values):
+            row["z"] = growth
+        return rows
 
     @staticmethod
     def _apply_filters(
@@ -137,8 +172,11 @@ class PerformanceAnalyticsService:
         blog_qs = BlogCreationTimeSeriesAggregate.objects.filter(granularity=granularity)
 
         # Apply filters
-        view_qs = PerformanceAnalyticsService._apply_filters(view_qs, filters, user_id, start, end)
-        blog_qs = PerformanceAnalyticsService._apply_filters(blog_qs, filters, user_id, start, end)
+        view_qs = PerformanceAnalyticsService._base_queryset(BlogViewTimeSeriesAggregate, granularity)
+        blog_qs = PerformanceAnalyticsService._base_queryset(BlogCreationTimeSeriesAggregate, granularity)
+
+        logger.debug(f"View queryset: {view_qs.count()}")
+        logger.debug(f"Blog queryset: {blog_qs.count()}")
 
         # Aggregate view counts by time period
         view_data = (
@@ -154,6 +192,10 @@ class PerformanceAnalyticsService:
             .order_by("time_bucket")
         )
 
+
+        logger.debug(f"View data: {view_data.count()}")
+        logger.debug(f"Blog data: {blog_data.count()}")
+
         # Fast lookup dictionary
         blog_counts = {
             row["time_bucket"]: row["total_blogs"]
@@ -161,24 +203,6 @@ class PerformanceAnalyticsService:
         }
 
         # Build result rows
-        rows: List[Dict[str, Any]] = []
-
-        for item in view_data:
-            bucket = item["time_bucket"]
-            views = item["total_views"]
-            blog_count = blog_counts.get(bucket, 0)
-
-            # Format label
-            bucket_label = bucket.strftime("%Y-%m-%d")
-            x_label = f"{bucket_label} ({blog_count} blogs)"
-
-            rows.append({"x": x_label, "y": views})
-
-        # Growth calculation (clean new version)
-        values = [row["y"] for row in rows]
-        growth_values = PerformanceAnalyticsService._compute_growth_series(values)
-
-        for row, growth in zip(rows, growth_values):
-            row["z"] = growth
-
+        rows = PerformanceAnalyticsService._build_result_rows(view_data, blog_counts)
+        logger.debug(f"Rows: {rows}")
         return rows

@@ -7,6 +7,7 @@ from django.db.models import Count, F, QuerySet
 from analytics.models import BlogView
 from analytics.utils.filters import build_q_from_filter
 from analytics.utils.helpers import parse_timerange
+from config.logger import logger
 
 
 class TopAnalyticsService:
@@ -118,6 +119,11 @@ class TopAnalyticsService:
     ) -> List[Dict[str, Any]]:
         qs = TopAnalyticsService._base_queryset(filters, start, end)
         cfg = TopAnalyticsService._get_config(top_type)
+        
+
+        logger.info(f"Base queryset: {qs.query}")
+        logger.info(f"Config: {cfg}")
+
 
         agg_qs = TopAnalyticsService._aggregate(
             qs,
@@ -131,9 +137,7 @@ class TopAnalyticsService:
             for row in agg_qs
         ]
 
-    # -------------------------------------------------------------------------
-    # ROUTER
-    # -------------------------------------------------------------------------
+
     @staticmethod
     def get_top_analytics(
         top: str,
