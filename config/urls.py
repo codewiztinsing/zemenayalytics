@@ -35,16 +35,8 @@ urlpatterns = [
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-    
-    # API versioning
-    # Latest version (currently v1) - redirects to v1
-    path("api/analytics/", include("apps.analytics.api.v1.urls")),
-    
-    # Versioned API endpoints
-    path(f"api/{API_VERSION}/analytics/", include("apps.analytics.api.v1.urls")),
-    
-    # Legacy endpoints (deprecated, redirect to v1)
-    path("analytics/", include("apps.analytics.api.urls")),
+   
+    path("analytics/", include("analytics.urls")),
 ]
 
 # Serve static and media files in development

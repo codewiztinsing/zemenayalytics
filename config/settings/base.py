@@ -35,7 +35,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "django_celery_beat",
     # Local apps
-    "apps.analytics",
+    "analytics",
 ]
 
 MIDDLEWARE = [
@@ -135,7 +135,7 @@ REST_FRAMEWORK = {
     "DEFAULT_VERSION": "v1",
     "ALLOWED_VERSIONS": ["v1"],
     "VERSION_PARAM": "version",
-    "DEFAULT_PAGINATION_CLASS": "apps.analytics.pagination.ConfigurablePageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "analytics.pagination.ConfigurablePageNumberPagination",
     "PAGE_SIZE": API_PAGE_SIZE,
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
@@ -154,8 +154,8 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     # SCHEMA_PATH_PREFIX removed - using postprocessing hook to handle /api/ and /api/v1/ removal
     "POSTPROCESSING_HOOKS": [
-        "apps.analytics.api.hooks.remove_api_prefixes_from_paths",
-        "apps.analytics.api.hooks.remove_schemas_from_components",
+        "analytics.api.hooks.remove_api_prefixes_from_paths",
+        "analytics.api.hooks.remove_schemas_from_components",
     ],
     "TAGS": [
         {"name": "Analytics", "description": "Analytics endpoints for blog views and performance metrics"},
@@ -215,40 +215,71 @@ else:
     }
     console_formatter = "standard"
 
+# Create logs directory if it doesn't exist and check permissions
+logs_dir = BASE_DIR / "logs"
+file_logging_enabled = True
+try:
+    os.makedirs(logs_dir, exist_ok=True)
+    # Try to create a test file to check permissions
+    test_file = logs_dir / ".test_write"
+    try:
+        test_file.touch()
+        test_file.unlink()
+    except (PermissionError, OSError):
+        # If we can't write, disable file logging
+        file_logging_enabled = False
+except (PermissionError, OSError):
+    # If we can't create the directory, disable file logging
+    file_logging_enabled = False
+
+# Build handlers based on file logging availability
+handlers = {
+    "console": {
+        "class": "logging.StreamHandler",
+        "formatter": console_formatter,
+        "level": "DEBUG",
+    },
+}
+
+if file_logging_enabled:
+    handlers["file"] = {
+        "class": "logging.handlers.RotatingFileHandler",
+        "filename": str(BASE_DIR / "logs" / "django.log"),
+        "formatter": "verbose",
+        "level": "INFO",
+        "maxBytes": 1024 * 1024 * 10,  # 10MB
+        "backupCount": 5,
+    }
+    # Use both console and file handlers
+    django_handlers = ["console", "file"]
+    analytics_handlers = ["console", "file"]
+else:
+    # Use console only
+    django_handlers = ["console"]
+    analytics_handlers = ["console"]
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": formatters,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": console_formatter,
-            "level": "DEBUG",
-        },
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "django.log",
-            "formatter": "verbose",
-            "level": "INFO",
-        },
-    },
+    "handlers": handlers,
     "root": {
         "handlers": ["console"],
         "level": "INFO",
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "file"],
+            "handlers": django_handlers,
             "level": "INFO",
             "propagate": False,
         },
         "django.request": {
-            "handlers": ["console", "file"],
+            "handlers": django_handlers,
             "level": "ERROR",
             "propagate": False,
         },
         "django.server": {
-            "handlers": ["console", "file"],
+            "handlers": django_handlers,
             "level": "INFO",
             "propagate": False,
         },
@@ -257,17 +288,13 @@ LOGGING = {
             "level": "WARNING",
             "propagate": False,
         },
-        "apps": {
-            "handlers": ["console", "file"],
+        "analytics": {
+            "handlers": analytics_handlers,
             "level": "DEBUG",
             "propagate": False,
         },
     },
 }
-
-# Create logs directory if it doesn't exist
-logs_dir = BASE_DIR / "logs"
-os.makedirs(logs_dir, exist_ok=True)
 
 # Celery Configuration
 CELERY_BROKER_URL = get_secret("CELERY_BROKER_URL", backup="redis://redis:6379/0")

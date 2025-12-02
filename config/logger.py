@@ -3,6 +3,6 @@ Centralized logging configuration for the application.
 """
 import logging
 
-# Get logger for apps
-logger = logging.getLogger("apps")
+# Get logger for analytics
+logger = logging.getLogger("analytics")
 
